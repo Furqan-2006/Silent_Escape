@@ -7,12 +7,16 @@ https://www.sfml-dev.org/documentation/3.0.0
 # tutorials
 https://www.sfml-dev.org/tutorials/3.0
 
-# A little explanation 
+# A little explanation and information
 (This is to work in "VS code", not "Microsoft Visual studio")
 
 1. Clone the repository as it is.
 2. While main is open, press ctrl+shift+B for the build process.
 3. Run the silent_escape.exe for the folder in file explorer that was cloned. 
+4. All self-made header files(.hpp) goes to includes folder.
+5. All sprites and spritesheets goes to assets folder. 
+6. The executable and dlls are found in build folder.
+7. Source files will be created in src folder.
 
 # Contact me for more information!
 
