@@ -8,6 +8,7 @@
         "args": [
           "-g",
           "${workspaceFolder}/src/main.cpp",
+          "${workspaceFolder}/src/game_menu.cpp",
           "-o",
           "${workspaceFolder}/build/silent_escape",
           "-I",
