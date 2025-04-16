@@ -9,6 +9,8 @@
           "-g",
           "${workspaceFolder}/src/main.cpp",
           "${workspaceFolder}/src/mainMenu.cpp",
+          "${workspaceFolder}/src/player.cpp",
+          "${workspaceFolder}/src/gameObj.cpp",
           "-o",
           "${workspaceFolder}/build/silent_escape",
           "-I",
