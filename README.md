@@ -27,3 +27,7 @@ https://www.sfml-dev.org/tutorials/3.0
 2. select ![alt text](image.png)
 3. Now the set the path as in the task.json.
 4. sfml will be working now working 
+
+# Installation of Compiler
+1. go to this site: https://www.msys2.org/ 
+2. follow the procedure on the site 
