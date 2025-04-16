@@ -20,3 +20,10 @@ https://www.sfml-dev.org/tutorials/3.0
 
 # Contact me for more information!
 
+
+# SFML 3.0 download procedure
+
+1. Open this link: https://www.sfml-dev.org/download/sfml/3.0.0/#windows
+2. select ![alt text](image.png)
+3. Now the set the path as in the task.json.
+4. sfml will be working now working 
