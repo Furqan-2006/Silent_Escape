@@ -4,7 +4,7 @@ sf::RenderWindow window(sf::VideoMode({800, 600}), "Silent Escape");
 GameState gameState = GameState::MENU;
 
 Menu menu(window.getSize().x, window.getSize().y);
-Player player;
+Player player(0.2);
 Guard guard;
 sf::Clock gameOverClock;
 std::vector<GameObject> obstacles = loadMap("../assets/maps/level1.txt", 15.f);
@@ -37,18 +37,6 @@ void handleLevel1Input(const sf::Event::KeyPressed &key, Player &player, std::ve
 {
     switch (key.scancode)
     {
-    case sf::Keyboard::Scancode::W:
-        player.moveUp(obstacles);
-        break;
-    case sf::Keyboard::Scancode::A:
-        player.moveLeft(obstacles);
-        break;
-    case sf::Keyboard::Scancode::S:
-        player.moveDown(obstacles);
-        break;
-    case sf::Keyboard::Scancode::D:
-        player.moveRight(obstacles);
-        break;
     case sf::Keyboard::Scancode::E:
         InteractionManager::handle(player, obstacles);
         break;
@@ -76,16 +64,10 @@ void renderLevel1(sf::RenderWindow &window, Player &player, Guard &guard, std::v
     for (auto &ob : obstacles)
         ob.draw(window);
 
-    guard.update(player.getPosition(), obstacles);
+    guard.update(player, player.getPosition(), obstacles, gameState);
     player.draw(window);
     guard.drawSightCone(window);
     guard.draw(window);
-
-    if (player.getBounds().findIntersection(guard.getBounds()).has_value())
-    {
-        guard.capture();
-        gameState = GameState::GAME_OVER;
-    }
 }
 
 int main()
@@ -139,6 +121,17 @@ int main()
         }
 
         window.display();
+        if (gameState == GameState::LEVEL_1)
+        {
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
+                player.moveUp(obstacles);
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+                player.moveLeft(obstacles);
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
+                player.moveDown(obstacles);
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+                player.moveRight(obstacles);
+        }
     }
     return 0;
 }

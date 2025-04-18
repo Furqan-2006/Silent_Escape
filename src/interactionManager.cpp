@@ -5,26 +5,31 @@ void InteractionManager::handle(Player &player, std::vector<GameObject> &objects
 {
     for (auto &obj : objects)
     {
-        if (player.getBounds().findIntersection(obj.getBounds()).has_value())
+        float dx = player.getPosition().x - obj.getPosition().x;
+        float dy = player.getPosition().y - obj.getPosition().y;
+        float dist = std::sqrt(dx * dx + dy * dy);
+
+        if (player.getBounds().findIntersection(obj.getBounds()).has_value() || dist < 30.f)
         {
             switch (obj.getType())
             {
             case ObjectType::Door:
+                player.hack();
+                obj.setFillColor(sf::Color::Red);
                 std::cout << "[LOG] Player is interacting with a door\n";
-                // Open or unlock the door
-                break;
+                return;
             case ObjectType::Box:
-                std::cout << "[LOG] Player is interacting with a Box\n";
                 player.hide();
-                break;
+                std::cout << "[LOG] Player is interacting with a Box\n";
+                return;
             case ObjectType::Disguise:
-                std::cout << "[LOG] Player is disguising \n";
                 player.disguise();
-                break;
+                std::cout << "[LOG] Player is disguising \n";
+                return;
             case ObjectType::Terminal:
+                player.hack();
                 std::cout << "[LOG] Player is interacting with a terminal\n";
-                // player.hack();
-                break;
+                return;
             }
             return;
         }

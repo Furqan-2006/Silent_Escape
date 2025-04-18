@@ -68,8 +68,22 @@ void Player::moveRight(const std::vector<GameObject> &obstacles)
     }
 }
 
-void Player::setDisguised(bool value) { disguised = value; }
-void Player::setHidden(bool value) { hidden = value; }
+void Player::setDisguised(bool value)
+{
+    disguised = value;
+    if (!value && !disguised)
+    {
+        rect.setFillColor(sf::Color::Green);
+    }
+}
+void Player::setHidden(bool value)
+{
+    hidden = value;
+    if (!value && !hidden)
+    {
+        rect.setFillColor(sf::Color::Green);
+    }
+}
 
 bool Player::isDisguised() const { return disguised; }
 bool Player::isHidden() const { return hidden; }
@@ -88,7 +102,7 @@ void Player::hide()
 }
 void Player::hack()
 {
-    std::cout << "[LOG] player is hacking " << std::endl;
+    std::cout << "[LOG] player is hacking..." << std::endl;
 }
 void Player::draw(sf::RenderWindow &window)
 {

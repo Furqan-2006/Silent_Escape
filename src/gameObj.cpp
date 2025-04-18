@@ -20,3 +20,11 @@ ObjectType GameObject::getType() const
 {
     return type;
 }
+sf::Vector2f GameObject::getPosition() const
+{
+    return shape.getPosition();
+}
+void GameObject::setFillColor(sf::Color color)
+{
+    shape.setFillColor(color);
+}

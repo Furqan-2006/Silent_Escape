@@ -24,4 +24,6 @@ public:
     virtual void draw(sf::RenderWindow &window);
     sf::FloatRect getBounds() const;
     ObjectType getType() const;
+    sf::Vector2f getPosition() const;
+    void setFillColor(sf::Color color);
 };

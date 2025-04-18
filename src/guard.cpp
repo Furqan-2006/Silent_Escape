@@ -50,14 +50,10 @@ void Guard::patrol(const std::vector<GameObject> &obstacles)
 void Guard::alert()
 {
     std::cout << "[LOG] Guard is alerted!" << std::endl;
-    circle.setFillColor(sf::Color::Yellow);
-    state = GuardState::Alerted;
 }
 
 void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles)
 {
-    state = GuardState::Chasing;
-    circle.setFillColor(sf::Color::Magenta);
     std::cout << "[LOG] Guard is chasing!" << std::endl;
 
     sf::Vector2f current = circle.getPosition();
@@ -84,12 +80,12 @@ void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &
     }
 }
 
-void Guard::capture()
+void Guard::capture(GameState &gameState)
 {
     std::cout << "[LOG] Guard captured the player!" << std::endl;
     circle.setFillColor(sf::Color::White);
     sf::sleep(sf::seconds(3));
-    // Later: game over logic
+    gameState = GameState::GAME_OVER;
 }
 
 bool Guard::canSeePlayer(const sf::Vector2f &playerPos)
@@ -137,30 +133,61 @@ void Guard::drawSightCone(sf::RenderWindow &window)
     window.draw(cone);
 }
 
-void Guard::update(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles)
+void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState)
 {
     float dist = std::hypot(playerPos.x - circle.getPosition().x, playerPos.y - circle.getPosition().y);
+    bool seesPlayer = canSeePlayer(playerPos);
 
-    if (canSeePlayer(playerPos))
+    switch (state)
     {
-        if (dist > 100)
+    case GuardState::Patrolling:
+        if (seesPlayer)
         {
-            alert();
+            std::cout << "[FSM] switching to alerted from patrolling.\n";
+            state = GuardState::Alerted;
+            circle.setFillColor(sf::Color::Yellow);
         }
         else
         {
-            chase(playerPos, obstacles);
-            if (dist < 20)
+            patrol(obstacles);
+        }
+        break;
+    case GuardState::Alerted:
+        if (!seesPlayer)
+        {
+            std::cout << "[FSM] lost player! reverting to Patrolling\n";
+            state = GuardState::Patrolling;
+            circle.setFillColor(sf::Color::Cyan);
+        }
+        else if (dist <= 100.f)
+        {
+            std::cout << "[FSM] switching to chasing from alerted.\n";
+            state = GuardState::Chasing;
+            circle.setFillColor(sf::Color::Magenta);
+        }
+    case GuardState::Chasing:
+        if (!seesPlayer)
+        {
+            std::cout << "[FSM] lost player! reverting to Patrolling\n";
+            state = GuardState::Patrolling;
+            circle.setFillColor(sf::Color::Cyan);
+        }
+        else
+        {
+            if (circle.getGlobalBounds().findIntersection(player.getBounds()).has_value())
             {
-                capture();
+                capture(gameState);
+            }
+            else
+            {
+                chase(playerPos, obstacles);
             }
         }
-    }
-    else
-    {
-        state = GuardState::Patrolling;
-        circle.setFillColor(sf::Color::Cyan);
-        patrol(obstacles);
+
+        break;
+
+    default:
+        break;
     }
 }
 

@@ -13,7 +13,7 @@ protected:
     bool hidden;
 
 public:
-    Player(float sp = 5);
+    Player(float sp = 0.2f);
     void moveUp(const std::vector<GameObject> &obstacles);
     void moveDown(const std::vector<GameObject> &obstacles);
     void moveRight(const std::vector<GameObject> &obstacles);

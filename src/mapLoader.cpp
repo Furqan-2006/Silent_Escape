@@ -8,7 +8,7 @@ std::vector<GameObject> loadMap(const std::string &fileName, float tileSize)
     std::vector<GameObject> objects;
     std::ifstream file(fileName);
     std::string line;
-    int row =0;
+    int row = 0;
     float radius = 25.f;
     int points = 10;
 
@@ -25,10 +25,16 @@ std::vector<GameObject> loadMap(const std::string &fileName, float tileSize)
                 objects.emplace_back(radius, points, pos, sf::Color::Blue, ObjectType::Wall);
                 break;
             case 2: // Box
-                objects.emplace_back(radius, points, pos, sf::Color::Yellow, ObjectType::Box);
+                objects.emplace_back(radius, 4, pos, sf::Color::Yellow, ObjectType::Box);
                 break;
             case 3: // Door
-                objects.emplace_back(radius, points, pos, sf::Color::Green, ObjectType::Door);
+                objects.emplace_back(radius, 8, pos, sf::Color(165, 42, 42), ObjectType::Door);
+                break;
+            case 4: // Disguise
+                objects.emplace_back(5.f, 40, pos, sf::Color(128, 0, 128), ObjectType::Disguise);
+                break;
+            case 5: // Terminal
+                objects.emplace_back(10.f, 3, pos, sf::Color(128, 128, 128), ObjectType::Terminal);
                 break;
             }
             col++;

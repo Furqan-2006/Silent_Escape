@@ -2,6 +2,7 @@
 
 #include "player.hpp"
 #include "gameObj.hpp"
+#include <cmath>
 #include <vector>
 
 class InteractionManager
