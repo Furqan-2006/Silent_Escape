@@ -1,37 +1,39 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-      {
-        "label": "build",
-        "type": "shell",
-        "command": "g++",
-        "args": [
-          "-g",
-          "${workspaceFolder}/src/main.cpp",
-          "${workspaceFolder}/src/mainMenu.cpp",
-          "${workspaceFolder}/src/player.cpp",
-          "${workspaceFolder}/src/gameObj.cpp",
-          "-o",
-          "${workspaceFolder}/build/silent_escape",
-          "-I",
-          "D:/SFML-3.0.0/include",
-          "-I",
-          "${workspaceFolder}/include",
-          "-L",
-          "D:/SFML-3.0.0/lib",
-          "-lsfml-graphics",
-          "-lsfml-window",
-          "-lsfml-system",
-          "-lsfml-audio",
-          "-static-libstdc++",
-          "-static-libgcc"
-        ],
-        "group": {
-          "kind": "build",
-          "isDefault": true
-        },
-        "problemMatcher": ["$gcc"]
-      }
-    ]
-  }
-  
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "g++",
+      "args": [
+        "-g",
+        "${workspaceFolder}/src/main.cpp",
+        "${workspaceFolder}/src/mainMenu.cpp",
+        "${workspaceFolder}/src/player.cpp",
+        "${workspaceFolder}/src/guard.cpp",
+        "${workspaceFolder}/src/gameObj.cpp",
+        "${workspaceFolder}/src/mapLoader.cpp",
+        "${workspaceFolder}/src/interactionManager.cpp",
+        "-o",
+        "${workspaceFolder}/build/silent_escape",
+        "-I",
+        "D:/SFML-3.0.0/include",
+        "-I",
+        "${workspaceFolder}/include",
+        "-L",
+        "D:/SFML-3.0.0/lib",
+        "-lsfml-graphics",
+        "-lsfml-window",
+        "-lsfml-system",
+        "-lsfml-audio",
+        "-static-libstdc++",
+        "-static-libgcc"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}

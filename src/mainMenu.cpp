@@ -11,7 +11,7 @@ Menu::Menu(float width, float height)
     menu.reserve(MAX_ITEMS);
     for (int i = 0; i < MAX_ITEMS; i++)
     {
-        sf::Text text(font, labels[i], 34);
+        sf::Text text(font, labels[i], 28);
         text.setFillColor(i == 0 ? sf::Color::Green : sf::Color::White);
         text.setPosition({width / 2 - 100, height / (MAX_ITEMS + 1) * (i + 1)});
 

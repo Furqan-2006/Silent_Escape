@@ -9,6 +9,8 @@ class Player
 protected:
     sf::RectangleShape rect;
     float speed;
+    bool disguised;
+    bool hidden;
 
 public:
     Player(float sp = 5);
@@ -16,10 +18,19 @@ public:
     void moveDown(const std::vector<GameObject> &obstacles);
     void moveRight(const std::vector<GameObject> &obstacles);
     void moveLeft(const std::vector<GameObject> &obstacles);
+
+    void setDisguised(bool Value);
+    bool isDisguised() const;
+    void setHidden(bool Value);
+    bool isHidden() const;
+
     void disguise();
     void hide();
     void hack();
 
     void draw(sf::RenderWindow &window);
     bool checkCollision(const sf::FloatRect &otherBounds) const;
+    sf::FloatRect getBounds() const;
+    sf::Vector2f getPosition() const;
+    void setPosition(sf::Vector2f pos);
 };
