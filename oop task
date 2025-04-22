@@ -1,0 +1,99 @@
+#include <iostream>
+#include <fstream>
+using namespace std;
+
+class Handler
+{
+private:
+    string fname;
+    ifstream rfile;
+    ofstream afile;
+
+public:
+    Handler(const string &n) : fname(n) {}
+
+    void readData()
+    {
+        try
+        {
+            rfile.open(fname);
+            if (rfile.fail())
+            {
+                throw runtime_error("File didnt open.\n");
+            }
+
+            string c;
+            while (getline(rfile, c))
+            {
+                for (int i = 0; i < c.size(); i++)
+                {
+                    c[i] = c[i] - i - 1;
+                }
+                cout << c << endl;
+            }
+            rfile.close();
+        }
+        catch (const exception &e)
+        {
+            cerr << e.what() << endl;
+        }
+    }
+
+    void appendLine(const string& c)
+    {
+        string line = c;
+        for (int i = 0; i < line.size(); i++)
+        {
+            line[i] = line[i] + i + 1;
+        }
+
+        try
+        {
+            afile.open(fname, ios::app);
+            if (afile.fail())
+            {
+                throw runtime_error("File didnt open.\n");
+            }
+            afile << line << "\n";
+            afile.close();
+        }
+        catch (const exception &e)
+        {
+            cerr << e.what() << endl;
+        }
+    }
+
+    void overwrite(const string& c)
+    {
+        string line = c;
+        for (int i = 0; i < line.size(); i++)
+        {
+            line[i] = line[i] + i + 1;
+        }
+        try
+        {
+
+            afile.open(fname, ios::out);
+            if (afile.fail())
+            {
+                throw runtime_error("File didnt open.\n");
+            }
+            afile << line << "\n";
+            afile.close();
+        }
+        catch (const exception &e)
+        {
+            cerr << e.what() << endl;
+        }
+    }
+};
+
+int main()
+{
+    Handler r("file.txt");
+    
+    r.overwrite("hi");
+    r.appendLine("bye");
+    r.readData();
+    return 0;
+}
