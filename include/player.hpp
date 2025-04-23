@@ -3,6 +3,7 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include "gameObj.hpp"
+#include "pathfinder.hpp"
 
 class Player
 {

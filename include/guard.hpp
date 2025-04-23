@@ -2,10 +2,12 @@
 
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 #include <SFML/Graphics.hpp>
 #include "gameObj.hpp"
 #include "player.hpp"
 #include "gameStateEnum.hpp"
+#include "pathfinder.hpp"
 
 #define PI 3.14159265358979323846f
 
@@ -17,29 +19,55 @@ enum class GuardState
     Searching,
     Idle
 };
+enum SearchPhase
+{
+    LookAround,
+    Wander,
+    ReturnToPatrol
+};
+
 class Guard
 {
 private:
     GuardState state;
+    SearchPhase currentPhase = SearchPhase::LookAround;
+
+    sf::Vector2f initialPosition;
+
     sf::CircleShape circle;
     sf::Vector2f velocity;
     sf::Vector2f facingDir;
+    sf::Clock alertClock;
+    sf::Clock searchClock;
+
     const float fieldOfView = 60.f;
-    const float viewDistance = 150.f;
+    const float alertDuration = 0.5f;
+    const float searchDuration = 3.f;
+    float viewDistance = 100.f;
+
+    bool alertClockStarted = false;
+    bool returnedToInitialPos = false;
     bool sightCone = true;
+    bool searchClockStarted = false;
+
     sf::Color sightColor = sf::Color(255, 255, 0, 100);
+    sf::Vector2f searchDirection;
+    sf::Vector2f lastKnownPlayerPosition;
 
 public:
     Guard();
-    void chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles);
-    void capture(GameState &gameState);
-    void alert();
     void patrol(const std::vector<GameObject> &obstacles);
+    void alert();
+    void chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, PathFinder &pathfinder);
+    void search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos);
+    void capture(GameState &gameState);
 
-    bool canSeePlayer(const sf::Vector2f &playerPos);
+    bool canSeePlayer(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles);
     void drawSightCone(sf::RenderWindow &window);
 
-    void update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState);
+    // bool canHearPlayer();
+
+    void update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder);
     bool checkCollision(const sf::FloatRect &otherBounds) const;
     void draw(sf::RenderWindow &window);
     sf::FloatRect getBounds() const;

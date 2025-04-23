@@ -3,12 +3,13 @@
 
 Guard::Guard()
 {
-    facingDir = velocity;
-    circle.setRadius(20.f);
+    circle.setRadius(10.f);
     circle.setFillColor(sf::Color::Cyan);
-    circle.setPosition({400, 180});
+    circle.setPosition({400, 150});
     state = GuardState::Patrolling;
-    velocity = {0.2, 0.f};
+    velocity = {0.1f, 0.f};
+    facingDir = velocity;
+    initialPosition = {400, 150};
 }
 
 bool Guard::checkCollision(const sf::FloatRect &otherBounds) const
@@ -18,6 +19,7 @@ bool Guard::checkCollision(const sf::FloatRect &otherBounds) const
 
 void Guard::patrol(const std::vector<GameObject> &obstacles)
 {
+    viewDistance = 100.f;
     circle.move(velocity);
 
     sf::Vector2f pos = circle.getPosition();
@@ -51,32 +53,153 @@ void Guard::alert()
 {
     std::cout << "[LOG] Guard is alerted!" << std::endl;
 }
-
-void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles)
+void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, PathFinder &pathfinder)
 {
-    std::cout << "[LOG] Guard is chasing!" << std::endl;
+    viewDistance = 115.f;
+    state = GuardState::Chasing;
+    circle.setFillColor(sf::Color::Magenta);
+    std::cout << "[LOG] Guard is chasing with pathfinding!\n";
 
-    sf::Vector2f current = circle.getPosition();
-    sf::Vector2f direction = playerPos - current;
+    // Get path using A*
+    std::vector<sf::Vector2f> path = pathfinder.findPath(circle.getPosition(), playerPos);
 
-    float length = std::sqrt((direction.x * direction.x) + (direction.y * direction.y));
-    if (length != 0)
+    if (!path.empty())
     {
-        direction /= length;
+        // Move a small step toward the next node
+        sf::Vector2f direction = path[0] - circle.getPosition();
+        float length = std::hypot(direction.x, direction.y);
+        if (length != 0)
+        {
+            direction /= length;
+            facingDir = direction;
+        }
+
+        float speed = 0.2f;
+        sf::Vector2f movement = direction * speed;
+        circle.move(movement);
+
+        // Collision with obstacles
+        for (const auto &obj : obstacles)
+        {
+            if (checkCollision(obj.getBounds()))
+            {
+                circle.move(-movement);
+                std::cout << "[LOG] Guard path blocked during chase\n";
+                break;
+            }
+        }
+    }
+}
+void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos)
+{
+    switch (currentPhase)
+    {
+    case SearchPhase::LookAround:
+        if (!searchClockStarted)
+        {
+            searchClock.restart();
+            searchClockStarted = true;
+            std::cout << "[SEARCH] Look Around started\n";
+        }
+
+        facingDir = {
+            std::cos(searchClock.getElapsedTime().asSeconds() * 2),
+            std::sin(searchClock.getElapsedTime().asSeconds() * 2)};
+
+        if (searchClock.getElapsedTime().asSeconds() > 2.f)
+        {
+            currentPhase = SearchPhase::Wander;
+            searchClock.restart();
+            std::cout << "[SEARCH] Switching to Wander\n";
+        }
+        break;
+
+    case SearchPhase::Wander:
+    {
+        if (!searchClockStarted)
+        {
+            searchClock.restart();
+            searchClockStarted = true;
+            std::cout << "[SEARCH] Wandering started\n";
+        }
+
+        std::vector<sf::Vector2f> path = pathfinder.findPath(circle.getPosition(), lastKnownPlayerPosition);
+
+        if (!path.empty())
+        {
+            sf::Vector2f direction = path[0] - circle.getPosition();
+            float length = std::hypot(direction.x, direction.y);
+            if (length != 0.f)
+                direction /= length;
+
+            facingDir = direction;
+            circle.move(direction * 0.08f);
+
+            for (const auto &obj : obstacles)
+            {
+                if (checkCollision(obj.getBounds()))
+                {
+                    circle.move(-direction * 1.f);
+                    break;
+                }
+            }
+        }
+
+        if (searchClock.getElapsedTime().asSeconds() > searchDuration)
+        {
+            std::cout << "[SEARCH] Switching to ToPatrol\n";
+            searchClock.restart();
+            currentPhase = SearchPhase::ReturnToPatrol;
+        }
+        break;
     }
 
-    float speed = 0.2;
-    sf::Vector2f movement = direction * speed;
-    circle.move(movement);
-
-    for (const auto &obj : obstacles)
+    case SearchPhase::ReturnToPatrol:
     {
-        if (checkCollision(obj.getBounds()))
+        std::cout << "[SEARCH] Returnning to Patrol--1\n";
+        std::vector<sf::Vector2f> path = pathfinder.findPath(circle.getPosition(), lastKnownPlayerPosition);
+
+        if (!path.empty())
         {
-            circle.move(-movement);
-            std::cout << "[LOG] Guard path blocked while chasing\n";
-            break;
+            std::cout << "[SEARCH] Returnning to Patrol--2\n";
+
+            sf::Vector2f direction = path[0] - circle.getPosition();
+            float length = std::hypot(direction.x, direction.y);
+            if (length != 0.f)
+                direction /= length;
+
+            facingDir = direction;
+            circle.move(direction * 0.08f);
+
+            for (const auto &obj : obstacles)
+            {
+                if (checkCollision(obj.getBounds()))
+                {
+                    circle.move(-direction * 1.f);
+                    break;
+                }
+            }
         }
+
+        if (std::hypot(circle.getPosition().x - initialPosition.x,
+                       circle.getPosition().y - initialPosition.y) < 50.f)
+        {
+            std::cout << "[SEARCH] Back to Patrolling\n";
+            state = GuardState::Patrolling;
+            circle.setFillColor(sf::Color::Cyan);
+            currentPhase = SearchPhase::LookAround;
+            searchClockStarted = false;
+        }
+        else
+        {
+            state = GuardState::Patrolling;
+            circle.setFillColor(sf::Color::Cyan);
+            currentPhase = SearchPhase::LookAround;
+            searchClockStarted = false;
+        }
+
+        break;
+    }
     }
 }
 
@@ -84,25 +207,39 @@ void Guard::capture(GameState &gameState)
 {
     std::cout << "[LOG] Guard captured the player!" << std::endl;
     circle.setFillColor(sf::Color::White);
-    sf::sleep(sf::seconds(3));
+    // sf::sleep(sf::seconds(3));
     gameState = GameState::GAME_OVER;
 }
 
-bool Guard::canSeePlayer(const sf::Vector2f &playerPos)
+bool Guard::canSeePlayer(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles)
 {
     sf::Vector2f toPlayer = playerPos - circle.getPosition();
-    float distance = std::sqrt((toPlayer.x * toPlayer.x) + (toPlayer.y * toPlayer.y));
+    float distance = std::hypot(toPlayer.x, toPlayer.y);
 
     if (distance > viewDistance)
-    {
         return false;
+
+    sf::Vector2f dir = toPlayer / distance;
+    sf::Vector2f current = circle.getPosition();
+
+    for (float t = 0.f; t < distance; t += 5.f)
+    {
+        sf::Vector2f point = current + dir * t;
+        sf::FloatRect pointRect(point, {2.f, 2.f});
+
+        for (const auto &ob : obstacles)
+        {
+            if (ob.getType() == ObjectType::Wall || ob.getType() == ObjectType::Box)
+            {
+                if (ob.getBounds().findIntersection(pointRect).has_value())
+                    return false;
+            }
+        }
     }
 
     if (distance != 0)
-    {
-        toPlayer /= distance;
-    }
-    float dot = (facingDir.x * toPlayer.x) + (facingDir.y * toPlayer.y);
+        facingDir = dir;
+    float dot = std::clamp(facingDir.x * dir.x + facingDir.y * dir.y, -1.f, 1.f);
     float angle = std::acos(dot) * 180.f / PI;
 
     return angle <= (fieldOfView / 2.f);
@@ -133,14 +270,15 @@ void Guard::drawSightCone(sf::RenderWindow &window)
     window.draw(cone);
 }
 
-void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState)
+void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder)
 {
     float dist = std::hypot(playerPos.x - circle.getPosition().x, playerPos.y - circle.getPosition().y);
-    bool seesPlayer = canSeePlayer(playerPos);
+    bool seesPlayer = canSeePlayer(playerPos, obstacles);
 
     switch (state)
     {
     case GuardState::Patrolling:
+    {
         if (seesPlayer)
         {
             std::cout << "[FSM] switching to alerted from patrolling.\n";
@@ -152,25 +290,49 @@ void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vec
             patrol(obstacles);
         }
         break;
+    }
     case GuardState::Alerted:
+    {
         if (!seesPlayer)
         {
-            std::cout << "[FSM] lost player! reverting to Patrolling\n";
-            state = GuardState::Patrolling;
-            circle.setFillColor(sf::Color::Cyan);
+            // If the player disappears mid-alert, forget about alert
+            std::cout << "[FSM] lost player during alert! switching to Searching\n";
+            lastKnownPlayerPosition = playerPos;
+            currentPhase = SearchPhase::LookAround;
+            searchClockStarted = false;
+            alertClockStarted = false;
+            state = GuardState::Searching;
+            circle.setFillColor(sf::Color::Red);
+            break;
         }
-        else if (dist <= 100.f)
+
+        if (!alertClockStarted)
         {
-            std::cout << "[FSM] switching to chasing from alerted.\n";
+            alertClock.restart();
+            alertClockStarted = true;
+            std::cout << "[FSM] Guard is alerted and pausing before chasing.\n";
+        }
+
+        if (alertClock.getElapsedTime().asSeconds() >= alertDuration)
+        {
+            std::cout << "[FSM] Alert duration passed. Switching to Chasing.\n";
+            alertClockStarted = false;
             state = GuardState::Chasing;
             circle.setFillColor(sf::Color::Magenta);
         }
+        break;
+    }
     case GuardState::Chasing:
+    {
         if (!seesPlayer)
         {
-            std::cout << "[FSM] lost player! reverting to Patrolling\n";
-            state = GuardState::Patrolling;
-            circle.setFillColor(sf::Color::Cyan);
+            std::cout << "[FSM] lost player! Staying alerted\n";
+            lastKnownPlayerPosition = playerPos;
+            currentPhase = SearchPhase::LookAround;
+            searchClockStarted = false;
+
+            state = GuardState::Searching;
+            circle.setFillColor(sf::Color::Red);
         }
         else
         {
@@ -180,13 +342,21 @@ void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vec
             }
             else
             {
-                chase(playerPos, obstacles);
+                chase(playerPos, obstacles, pathfinder);
             }
         }
-
         break;
+    }
+    case GuardState::Searching:
+        search(obstacles, pathfinder, playerPos);
+        if (canSeePlayer(playerPos, obstacles))
+        {
+            std::cout << "[FSM] Player found again! switching to Alerted\n";
+            state = GuardState::Alerted;
+            alertClock.restart();
+            circle.setFillColor(sf::Color::Yellow);
+        }
 
-    default:
         break;
     }
 }

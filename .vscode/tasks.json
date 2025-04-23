@@ -14,6 +14,7 @@
         "${workspaceFolder}/src/gameObj.cpp",
         "${workspaceFolder}/src/mapLoader.cpp",
         "${workspaceFolder}/src/interactionManager.cpp",
+        "${workspaceFolder}/src/pathfinder.cpp",
         "-o",
         "${workspaceFolder}/build/silent_escape",
         "-I",

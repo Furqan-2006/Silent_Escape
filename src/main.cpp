@@ -7,7 +7,9 @@ Menu menu(window.getSize().x, window.getSize().y);
 Player player(0.2);
 Guard guard;
 sf::Clock gameOverClock;
-std::vector<GameObject> obstacles = loadMap("../assets/maps/level1.txt", 15.f);
+std::vector<GameObject> obstacles = loadMap("../assets/maps/level1.txt", 40.f);
+auto gridData = loadGridMap("../assets/maps/level1.txt");
+PathFinder pathfinder(gridData.size(), gridData[0].size(), 40.f, gridData);
 
 void handleMenuInput(const sf::Event::KeyPressed &key, Menu &menu, GameState &gameState, sf::RenderWindow &window)
 {
@@ -30,7 +32,7 @@ void handleMenuInput(const sf::Event::KeyPressed &key, Menu &menu, GameState &ga
             window.close();
             break;
         }
-    }
+    } 
 }
 
 void handleLevel1Input(const sf::Event::KeyPressed &key, Player &player, std::vector<GameObject> &obstacles)
@@ -59,12 +61,12 @@ void renderMenu(sf::RenderWindow &window, Menu &menu)
     menu.draw(window);
 }
 
-void renderLevel1(sf::RenderWindow &window, Player &player, Guard &guard, std::vector<GameObject> &obstacles, GameState &gameState)
+void renderLevel1(sf::RenderWindow &window, Player &player, Guard &guard, std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder)
 {
     for (auto &ob : obstacles)
         ob.draw(window);
 
-    guard.update(player, player.getPosition(), obstacles, gameState);
+    guard.update(player, player.getPosition(), obstacles, gameState, pathfinder);
     player.draw(window);
     guard.drawSightCone(window);
     guard.draw(window);
@@ -109,7 +111,7 @@ int main()
             renderMenu(window, menu);
             break;
         case GameState::LEVEL_1:
-            renderLevel1(window, player, guard, obstacles, gameState);
+            renderLevel1(window, player, guard, obstacles, gameState, pathfinder);
             break;
         case GameState::GAME_OVER:
             window.draw(levelText);

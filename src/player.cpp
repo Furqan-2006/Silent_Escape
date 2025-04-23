@@ -2,7 +2,7 @@
 
 Player::Player(float sp) : speed(sp), disguised(false), hidden(false)
 {
-    rect.setSize(sf::Vector2f({40.f, 40.f}));
+    rect.setSize(sf::Vector2f({10.f, 10.f}));
     rect.setFillColor(sf::Color::Green);
     rect.setPosition({400, 500});
 }
