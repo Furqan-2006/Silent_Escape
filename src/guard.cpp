@@ -7,9 +7,13 @@ Guard::Guard()
     circle.setFillColor(sf::Color::Cyan);
     circle.setPosition({400, 150});
     state = GuardState::Patrolling;
-    velocity = {0.1f, 0.f};
+    velocity = {1.0f, 0.f};
     facingDir = velocity;
     initialPosition = {400, 150};
+
+    lastSeenMarker.setRadius(5.f);
+    lastSeenMarker.setFillColor(sf::Color::Red);
+    lastSeenMarker.setOrigin({5.f, 5.f}); // Center the marker
 }
 
 bool Guard::checkCollision(const sf::FloatRect &otherBounds) const
@@ -74,7 +78,7 @@ void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &
             facingDir = direction;
         }
 
-        float speed = 0.2f;
+        float speed = 1.f;
         sf::Vector2f movement = direction * speed;
         circle.move(movement);
 
@@ -90,7 +94,7 @@ void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &
         }
     }
 }
-void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos)
+void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, int &tileSize)
 {
     switch (currentPhase)
     {
@@ -110,10 +114,10 @@ void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfin
         {
             currentPhase = SearchPhase::Wander;
             searchClock.restart();
+            searchClockStarted = false;
             std::cout << "[SEARCH] Switching to Wander\n";
         }
         break;
-
     case SearchPhase::Wander:
     {
         if (!searchClockStarted)
@@ -121,26 +125,100 @@ void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfin
             searchClock.restart();
             searchClockStarted = true;
             std::cout << "[SEARCH] Wandering started\n";
+
+            wanderPath = pathfinder.findPath(circle.getPosition(), lastKnownPlayerPosition);
+            currentWanderPathIndex = 0;
+            generatedInitialWanderPath = true;
         }
 
-        std::vector<sf::Vector2f> path = pathfinder.findPath(circle.getPosition(), lastKnownPlayerPosition);
-
-        if (!path.empty())
+        if (generatedInitialWanderPath && currentWanderPathIndex < wanderPath.size())
         {
-            sf::Vector2f direction = path[0] - circle.getPosition();
+            sf::Vector2f target = wanderPath[currentWanderPathIndex];
+            sf::Vector2f direction = target - circle.getPosition();
             float length = std::hypot(direction.x, direction.y);
-            if (length != 0.f)
-                direction /= length;
 
-            facingDir = direction;
-            circle.move(direction * 0.08f);
-
-            for (const auto &obj : obstacles)
+            if (length < 2.f)
             {
-                if (checkCollision(obj.getBounds()))
+                currentWanderPathIndex++;
+            }
+            else
+            {
+                direction /= length;
+                facingDir = direction;
+                circle.move(direction * 1.f);
+
+                for (const auto &obj : obstacles)
                 {
-                    circle.move(-direction * 1.f);
-                    break;
+                    if (checkCollision(obj.getBounds()))
+                    {
+                        circle.move(-direction * 1.f);
+                        break;
+                    }
+                }
+            }
+        }
+        else if (generatedInitialWanderPath)
+        {
+
+            if (wanderTargets.empty())
+            {
+                wanderTargets.clear();
+                currentWanderIndex = 0;
+
+                for (int i = 0; i < 4; i++)
+                {
+                    float offSetX = static_cast<float>((rand() % 81) - 40);
+                    float offSetY = static_cast<float>((rand() % 81) - 40);
+                    sf::Vector2f candidate = lastKnownPlayerPosition + sf::Vector2f(offSetX, offSetY);
+                    sf::Vector2i gridCandidate = {
+                        static_cast<int>(candidate.x / tileSize),
+                        static_cast<int>(candidate.y / tileSize)};
+
+                    if (pathfinder.isWalkable(gridCandidate.y, gridCandidate.x))
+                    {
+                        wanderTargets.push_back(candidate);
+                    }
+                }
+            }
+
+            if (currentWanderIndex < wanderTargets.size())
+            {
+                sf::Vector2f target = wanderTargets[currentWanderIndex];
+                sf::Vector2f direction = target - circle.getPosition();
+                float length = std::hypot(direction.x, direction.y);
+
+                if (length < 2.f)
+                {
+                    if (!isPausingAtTarget)
+                    {
+                        wanderPauseClock.restart();
+                        isPausingAtTarget = true;
+                        std::cout << "[SEARCH] Reached wander point. Pausing to look around.\n";
+                    }
+
+                    facingDir = sf::Vector2f(std::cos(wanderPauseClock.getElapsedTime().asSeconds() * 2),
+                                             std::sin(wanderPauseClock.getElapsedTime().asSeconds() * 2));
+
+                    if (wanderPauseClock.getElapsedTime().asSeconds() >= pauseDurationAtTarget)
+                    {
+                        currentWanderTarget++;
+                        isPausingAtTarget = false;
+                    }
+                }
+                else
+                {
+                    direction /= length;
+                    facingDir = direction;
+                    circle.move(direction * 1.f);
+
+                    for (const auto &obj : obstacles)
+                    {
+                        if (checkCollision(obj.getBounds()))
+                        {
+                            circle.move(-direction * 1.f);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -148,9 +226,13 @@ void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfin
         if (searchClock.getElapsedTime().asSeconds() > searchDuration)
         {
             std::cout << "[SEARCH] Switching to ToPatrol\n";
-            searchClock.restart();
             currentPhase = SearchPhase::ReturnToPatrol;
+            searchClock.restart();
+            searchClockStarted = false;
+            generatedInitialWanderPath = false;
+            wanderTargets.clear();
         }
+
         break;
     }
 
@@ -169,7 +251,7 @@ void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfin
                 direction /= length;
 
             facingDir = direction;
-            circle.move(direction * 0.08f);
+            circle.move(direction * 1.f);
 
             for (const auto &obj : obstacles)
             {
@@ -270,7 +352,7 @@ void Guard::drawSightCone(sf::RenderWindow &window)
     window.draw(cone);
 }
 
-void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder)
+void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, int &tileSize)
 {
     float dist = std::hypot(playerPos.x - circle.getPosition().x, playerPos.y - circle.getPosition().y);
     bool seesPlayer = canSeePlayer(playerPos, obstacles);
@@ -298,6 +380,8 @@ void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vec
             // If the player disappears mid-alert, forget about alert
             std::cout << "[FSM] lost player during alert! switching to Searching\n";
             lastKnownPlayerPosition = playerPos;
+            lastSeenMarker.setPosition(lastKnownPlayerPosition);
+
             currentPhase = SearchPhase::LookAround;
             searchClockStarted = false;
             alertClockStarted = false;
@@ -328,6 +412,8 @@ void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vec
         {
             std::cout << "[FSM] lost player! Staying alerted\n";
             lastKnownPlayerPosition = playerPos;
+            lastSeenMarker.setPosition(lastKnownPlayerPosition);
+
             currentPhase = SearchPhase::LookAround;
             searchClockStarted = false;
 
@@ -348,7 +434,7 @@ void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vec
         break;
     }
     case GuardState::Searching:
-        search(obstacles, pathfinder, playerPos);
+        search(obstacles, pathfinder, playerPos, tileSize);
         if (canSeePlayer(playerPos, obstacles))
         {
             std::cout << "[FSM] Player found again! switching to Alerted\n";
@@ -364,6 +450,7 @@ void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vec
 void Guard::draw(sf::RenderWindow &window)
 {
     window.draw(circle);
+    window.draw(lastSeenMarker);
 }
 
 sf::FloatRect Guard::getBounds() const

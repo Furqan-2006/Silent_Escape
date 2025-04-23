@@ -35,31 +35,43 @@ private:
     sf::Vector2f initialPosition;
 
     sf::CircleShape circle;
+    sf::CircleShape lastSeenMarker;
     sf::Vector2f velocity;
     sf::Vector2f facingDir;
     sf::Clock alertClock;
     sf::Clock searchClock;
+    sf::Clock wanderPauseClock;
 
     const float fieldOfView = 60.f;
     const float alertDuration = 0.5f;
-    const float searchDuration = 3.f;
+    const float searchDuration = 5.f;
     float viewDistance = 100.f;
+    float moveSpeed = 1.0f;
+    float pauseDurationAtTarget = 1.f;
 
     bool alertClockStarted = false;
     bool returnedToInitialPos = false;
     bool sightCone = true;
     bool searchClockStarted = false;
+    bool isPausingAtTarget = false;
+    bool generatedInitialWanderPath = false;
+
+    int currentWanderIndex = 0;
+    int currentWanderPathIndex = 0;
+    int currentWanderTarget = 0;
 
     sf::Color sightColor = sf::Color(255, 255, 0, 100);
     sf::Vector2f searchDirection;
     sf::Vector2f lastKnownPlayerPosition;
+    std::vector<sf::Vector2f> wanderPath;
+    std::vector<sf::Vector2f> wanderTargets;
 
 public:
     Guard();
     void patrol(const std::vector<GameObject> &obstacles);
     void alert();
     void chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, PathFinder &pathfinder);
-    void search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos);
+    void search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, int &tileSize);
     void capture(GameState &gameState);
 
     bool canSeePlayer(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles);
@@ -67,7 +79,7 @@ public:
 
     // bool canHearPlayer();
 
-    void update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder);
+    void update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, int &tileSize);
     bool checkCollision(const sf::FloatRect &otherBounds) const;
     void draw(sf::RenderWindow &window);
     sf::FloatRect getBounds() const;

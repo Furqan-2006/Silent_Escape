@@ -4,10 +4,11 @@ sf::RenderWindow window(sf::VideoMode({800, 600}), "Silent Escape");
 GameState gameState = GameState::MENU;
 
 Menu menu(window.getSize().x, window.getSize().y);
-Player player(0.2);
+Player player(1.5f);
 Guard guard;
 sf::Clock gameOverClock;
-std::vector<GameObject> obstacles = loadMap("../assets/maps/level1.txt", 40.f);
+int tileSize = 40.f;
+std::vector<GameObject> obstacles = loadMap("../assets/maps/level1.txt", tileSize);
 auto gridData = loadGridMap("../assets/maps/level1.txt");
 PathFinder pathfinder(gridData.size(), gridData[0].size(), 40.f, gridData);
 
@@ -32,7 +33,7 @@ void handleMenuInput(const sf::Event::KeyPressed &key, Menu &menu, GameState &ga
             window.close();
             break;
         }
-    } 
+    }
 }
 
 void handleLevel1Input(const sf::Event::KeyPressed &key, Player &player, std::vector<GameObject> &obstacles)
@@ -66,7 +67,7 @@ void renderLevel1(sf::RenderWindow &window, Player &player, Guard &guard, std::v
     for (auto &ob : obstacles)
         ob.draw(window);
 
-    guard.update(player, player.getPosition(), obstacles, gameState, pathfinder);
+    guard.update(player, player.getPosition(), obstacles, gameState, pathfinder, window, tileSize);
     player.draw(window);
     guard.drawSightCone(window);
     guard.draw(window);
@@ -74,6 +75,7 @@ void renderLevel1(sf::RenderWindow &window, Player &player, Guard &guard, std::v
 
 int main()
 {
+    window.setFramerateLimit(60);
     // GameoverText:start
     sf::Font font;
     if (!font.openFromFile("../assets/Fonts/CURLZ___.TTF"))

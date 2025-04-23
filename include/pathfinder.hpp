@@ -25,11 +25,10 @@ private:
     int rows, cols;
     float tileSize;
 
-    bool isWalkable(int row, int col);
     std::vector<sf::Vector2i> getNeighbours(const sf::Vector2i &pos);
-
-public:
-
+    
+    public:
+    bool isWalkable(int row, int col);
     PathFinder(int rows, int cols, float tileSize, const std::vector<std::vector<int>> &mapData);
     std::vector<sf::Vector2f> findPath(const sf::Vector2f &startPos, const sf::Vector2f &endPos);
 };
