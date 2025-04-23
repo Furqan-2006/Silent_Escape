@@ -2,6 +2,7 @@
 
 #include "player.hpp"
 #include "gameObj.hpp"
+#include <SFML/Graphics.hpp>
 #include <cmath>
 #include <vector>
 

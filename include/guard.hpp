@@ -67,11 +67,13 @@ private:
     std::vector<sf::Vector2f> wanderTargets;
 
 public:
+    Guard(const sf::Vector2f &startPos);
     Guard();
+
     void patrol(const std::vector<GameObject> &obstacles);
     void alert();
     void chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, PathFinder &pathfinder);
-    void search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, int &tileSize);
+    void search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, float &tileSize);
     void capture(GameState &gameState);
 
     bool canSeePlayer(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles);
@@ -79,8 +81,11 @@ public:
 
     // bool canHearPlayer();
 
-    void update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, int &tileSize);
+    void update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, float &tileSize);
     bool checkCollision(const sf::FloatRect &otherBounds) const;
     void draw(sf::RenderWindow &window);
+
+    void setPosition(const sf::Vector2f &position);
+    void setVelocity(const sf::Vector2f &dir);
     sf::FloatRect getBounds() const;
 };

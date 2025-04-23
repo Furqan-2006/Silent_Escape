@@ -5,17 +5,18 @@ Guard::Guard()
 {
     circle.setRadius(10.f);
     circle.setFillColor(sf::Color::Cyan);
-    circle.setPosition({400, 150});
     state = GuardState::Patrolling;
     velocity = {1.0f, 0.f};
     facingDir = velocity;
-    initialPosition = {400, 150};
 
     lastSeenMarker.setRadius(5.f);
     lastSeenMarker.setFillColor(sf::Color::Red);
     lastSeenMarker.setOrigin({5.f, 5.f}); // Center the marker
 }
-
+Guard::Guard(const sf::Vector2f &startPos) : Guard()
+{
+    setPosition(startPos);
+}
 bool Guard::checkCollision(const sf::FloatRect &otherBounds) const
 {
     return circle.getGlobalBounds().findIntersection(otherBounds).has_value();
@@ -94,7 +95,7 @@ void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &
         }
     }
 }
-void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, int &tileSize)
+void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, float &tileSize)
 {
     switch (currentPhase)
     {
@@ -352,7 +353,7 @@ void Guard::drawSightCone(sf::RenderWindow &window)
     window.draw(cone);
 }
 
-void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, int &tileSize)
+void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, float &tileSize)
 {
     float dist = std::hypot(playerPos.x - circle.getPosition().x, playerPos.y - circle.getPosition().y);
     bool seesPlayer = canSeePlayer(playerPos, obstacles);
@@ -451,6 +452,21 @@ void Guard::draw(sf::RenderWindow &window)
 {
     window.draw(circle);
     window.draw(lastSeenMarker);
+}
+
+void Guard::setPosition(const sf::Vector2f &position)
+{
+    circle.setPosition(position);
+    initialPosition = position;
+}
+
+void Guard::setVelocity(const sf::Vector2f &dir)
+{
+    velocity = dir;
+    if (velocity != sf::Vector2f({0.f, 0.f}))
+    {
+        facingDir = velocity / std::hypot(velocity.x, velocity.y);
+    }
 }
 
 sf::FloatRect Guard::getBounds() const

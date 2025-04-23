@@ -9,13 +9,13 @@ void InteractionManager::handle(Player &player, std::vector<GameObject> &objects
         float dy = player.getPosition().y - obj.getPosition().y;
         float dist = std::sqrt(dx * dx + dy * dy);
 
-        if (player.getBounds().findIntersection(obj.getBounds()).has_value() || dist < 30.f)
+        if ((player.getBounds().findIntersection(obj.getBounds()).has_value() || dist < 30.f ) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E))
         {
             switch (obj.getType())
             {
             case ObjectType::Door:
                 player.hack();
-                obj.setFillColor(sf::Color::Red);
+                obj.setFillColor(sf::Color::Green);
                 std::cout << "[LOG] Player is interacting with a door\n";
                 return;
             case ObjectType::Box:
@@ -24,10 +24,12 @@ void InteractionManager::handle(Player &player, std::vector<GameObject> &objects
                 return;
             case ObjectType::Disguise:
                 player.disguise();
+                obj.setFillColor(sf::Color::Green);
                 std::cout << "[LOG] Player is disguising \n";
                 return;
             case ObjectType::Terminal:
                 player.hack();
+
                 std::cout << "[LOG] Player is interacting with a terminal\n";
                 return;
             }

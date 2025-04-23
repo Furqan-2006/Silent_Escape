@@ -2,13 +2,13 @@
 
 #include <SFML/Graphics.hpp>
 #include "mainMenu.hpp"
+#include "level.hpp"
 #include "player.hpp"
 #include "guard.hpp"
 #include "gameObj.hpp"
 #include "mapLoader.hpp"
 #include "interactionManager.hpp"
 #include "pathfinder.hpp"
-
 
 void handleMenuInput(const sf::Event::KeyPressed &, Menu &, GameState &, sf::RenderWindow &);
 void handleLevel1Input(const sf::Event::KeyPressed &, Player &, std::vector<GameObject> &);

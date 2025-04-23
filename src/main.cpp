@@ -2,15 +2,11 @@
 
 sf::RenderWindow window(sf::VideoMode({800, 600}), "Silent Escape");
 GameState gameState = GameState::MENU;
-
 Menu menu(window.getSize().x, window.getSize().y);
-Player player(1.5f);
-Guard guard;
+
 sf::Clock gameOverClock;
-int tileSize = 40.f;
-std::vector<GameObject> obstacles = loadMap("../assets/maps/level1.txt", tileSize);
-auto gridData = loadGridMap("../assets/maps/level1.txt");
-PathFinder pathfinder(gridData.size(), gridData[0].size(), 40.f, gridData);
+float tileSize = 40.f;
+Level level1("../assets/maps/level1.txt", tileSize, window);
 
 void handleMenuInput(const sf::Event::KeyPressed &key, Menu &menu, GameState &gameState, sf::RenderWindow &window)
 {
@@ -36,41 +32,15 @@ void handleMenuInput(const sf::Event::KeyPressed &key, Menu &menu, GameState &ga
     }
 }
 
-void handleLevel1Input(const sf::Event::KeyPressed &key, Player &player, std::vector<GameObject> &obstacles)
-{
-    switch (key.scancode)
-    {
-    case sf::Keyboard::Scancode::E:
-        InteractionManager::handle(player, obstacles);
-        break;
-    case sf::Keyboard::Scancode::Escape:
-        std::cout << "[LOG] Escape pressed\n";
-        break;
-    default:
-        break;
-    }
-}
-
 void updateGameOverState(GameState &gameState, sf::Clock &clock)
 {
     if (clock.getElapsedTime().asSeconds() > 2.f)
         gameState = GameState::MENU;
-} // GameoverText:start
+}
 
 void renderMenu(sf::RenderWindow &window, Menu &menu)
 {
     menu.draw(window);
-}
-
-void renderLevel1(sf::RenderWindow &window, Player &player, Guard &guard, std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder)
-{
-    for (auto &ob : obstacles)
-        ob.draw(window);
-
-    guard.update(player, player.getPosition(), obstacles, gameState, pathfinder, window, tileSize);
-    player.draw(window);
-    guard.drawSightCone(window);
-    guard.draw(window);
 }
 
 int main()
@@ -101,7 +71,7 @@ int main()
                 if (gameState == GameState::MENU)
                     handleMenuInput(*keyPressed, menu, gameState, window);
                 else if (gameState == GameState::LEVEL_1)
-                    handleLevel1Input(*keyPressed, player, obstacles);
+                    level1.handleInput(*keyPressed);
             }
         }
 
@@ -113,7 +83,7 @@ int main()
             renderMenu(window, menu);
             break;
         case GameState::LEVEL_1:
-            renderLevel1(window, player, guard, obstacles, gameState, pathfinder);
+            level1.render();
             break;
         case GameState::GAME_OVER:
             window.draw(levelText);
@@ -127,14 +97,7 @@ int main()
         window.display();
         if (gameState == GameState::LEVEL_1)
         {
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
-                player.moveUp(obstacles);
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
-                player.moveLeft(obstacles);
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
-                player.moveDown(obstacles);
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
-                player.moveRight(obstacles);
+            level1.update(gameState);
         }
     }
     return 0;
