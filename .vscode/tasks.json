@@ -16,6 +16,7 @@
         "${workspaceFolder}/src/interactionManager.cpp",
         "${workspaceFolder}/src/pathfinder.cpp",
         "${workspaceFolder}/src/level.cpp",
+        "${workspaceFolder}/src/metaDataLoader.cpp",
         "-o",
         "${workspaceFolder}/build/silent_escape",
         "-I",

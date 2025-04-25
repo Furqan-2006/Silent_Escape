@@ -67,34 +67,45 @@ void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &
 
     // Get path using A*
     std::vector<sf::Vector2f> path = pathfinder.findPath(circle.getPosition(), playerPos);
+    std::cout << "[DEBUG] Path size: " << path.size() << "\n";
 
     if (!path.empty())
     {
-        // Move a small step toward the next node
         sf::Vector2f direction = path[0] - circle.getPosition();
         float length = std::hypot(direction.x, direction.y);
-        if (length != 0)
+
+        // Avoid division by zero or very small movement
+        if (length > 1e-3f)
         {
             direction /= length;
             facingDir = direction;
-        }
 
-        float speed = 1.f;
-        sf::Vector2f movement = direction * speed;
-        circle.move(movement);
+            float speed = 1.f;
+            sf::Vector2f movement = direction * speed;
+            circle.move(movement);
 
-        // Collision with obstacles
-        for (const auto &obj : obstacles)
-        {
-            if (checkCollision(obj.getBounds()))
+            // Collision with obstacles
+            for (const auto &obj : obstacles)
             {
-                circle.move(-movement);
-                std::cout << "[LOG] Guard path blocked during chase\n";
-                break;
+                if (checkCollision(obj.getBounds()))
+                {
+                    circle.move(-movement);
+                    std::cout << "[LOG] Guard path blocked during chase\n";
+                    break;
+                }
             }
         }
+        else
+        {
+            std::cout << "[DEBUG] Guard already at path target. No movement.\n";
+        }
+    }
+    else
+    {
+        std::cout << "[DEBUG] No path found for guard.\n";
     }
 }
+
 void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, float &tileSize)
 {
     switch (currentPhase)

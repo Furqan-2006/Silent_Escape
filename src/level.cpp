@@ -1,5 +1,6 @@
 #include "level.hpp"
 #include "mapLoader.hpp"
+#include "metaDataLoader.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -10,11 +11,16 @@ Level::Level(const std::string &mapPath, float tileSize, sf::RenderWindow &win) 
     auto gridData = loadGridMap(mapPath);
     pathfinder = std::make_unique<PathFinder>(gridData.size(), gridData[0].size(), tileSize, gridData);
 
-    player.setPosition({400, 450});
+    std::string metaPath = mapPath.substr(0, mapPath.find_last_of('.')) + ".json";
+    LevelMetadata meta = loadMetadata(metaPath, tileSize);
 
-    addGuard({400, 150});
-    addGuard({400, 550});
-    addGuard({200, 300}, {0.f, 1.f});
+    player.setPosition(meta.playerPos);
+
+    for (const auto &g : meta.guards)
+    {
+        addGuard(g.position, g.direction);
+    }
+
     std::cout << "Level loaded\n";
 }
 
@@ -25,19 +31,13 @@ void Level::handleInput(const sf::Event::KeyPressed &key)
         InteractionManager::handle(player, obstacles);
     }
 }
-void Level::addGuard(const sf::Vector2f &position)
-{
-    Guard guard;
-    guard.setPosition(position);
-    guards.push_back(guard);
-}
+
 void Level::addGuard(const sf::Vector2f &position, const sf::Vector2f &direction)
 {
     Guard guard;
     guard.setPosition(position);
     guard.setVelocity(direction);
-    guards.push_back(guard);
-
+    Level::guards.push_back(guard);
 }
 
 void Level::update(GameState &gameState)

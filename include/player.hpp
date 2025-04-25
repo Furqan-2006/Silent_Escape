@@ -28,6 +28,7 @@ public:
     void disguise();
     void hide();
     void hack();
+    void distract();
 
     void draw(sf::RenderWindow &window);
     bool checkCollision(const sf::FloatRect &otherBounds) const;
