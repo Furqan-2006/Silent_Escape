@@ -20,14 +20,13 @@ private:
     std::vector<Guard> guards;
     Player player;
     std::unique_ptr<PathFinder> pathfinder;
-    
+
     void addGuard(const sf::Vector2f &position, const sf::Vector2f &direction);
 
 public:
     Level(const std::string &mapPath, float tileSize, sf::RenderWindow &win);
 
     void handleInput(const sf::Event::KeyPressed &key);
-    void update(GameState &gameState);
+    void update(GameState &gameState, float &deltaTime);
     void render();
-    
 };

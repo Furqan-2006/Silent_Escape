@@ -1,5 +1,6 @@
 #include "guard.hpp"
 #include <SFML/System.hpp>
+#include <string>
 
 Guard::Guard()
 {
@@ -58,51 +59,47 @@ void Guard::alert()
 {
     std::cout << "[LOG] Guard is alerted!" << std::endl;
 }
-void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, PathFinder &pathfinder)
+
+void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, PathFinder &pathfinder, float &deltaTime)
 {
-    viewDistance = 115.f;
     state = GuardState::Chasing;
     circle.setFillColor(sf::Color::Magenta);
-    std::cout << "[LOG] Guard is chasing with pathfinding!\n";
+    std::cout << "[LOG] Guard is in chasing state.\n";
 
-    // Get path using A*
+    std::cout << "[DEBUG] Player Position: " << playerPos.x << ", " << playerPos.y << "\n";
+    std::cout << "[DEBUG] Guard Position: " << circle.getPosition().x << ", " << circle.getPosition().y << "\n";
+
+    // Find path from current position to player
     std::vector<sf::Vector2f> path = pathfinder.findPath(circle.getPosition(), playerPos);
-    std::cout << "[DEBUG] Path size: " << path.size() << "\n";
+    currentPath = path;
+
+    std::cout << "[DEBUG] Player Position: " << playerPos.x << ", " << playerPos.y << "\n";
+    std::cout << "[DEBUG] Guard Position: " << circle.getPosition().x << ", " << circle.getPosition().y << "\n";
 
     if (!path.empty())
+
     {
-        sf::Vector2f direction = path[0] - circle.getPosition();
-        float length = std::hypot(direction.x, direction.y);
+        // Target the next node on the path
+        sf::Vector2f targetPos = path.front(); // front() gives first element
 
-        // Avoid division by zero or very small movement
-        if (length > 1e-3f)
+        sf::Vector2f direction = targetPos - circle.getPosition();
+        float distance = std::hypot(direction.x, direction.y);
+
+        if (distance > 1.f)
         {
-            direction /= length;
-            facingDir = direction;
+            direction /= distance; // normalize
+            circle.move(direction * moveSpeed * deltaTime);
 
-            float speed = 1.f;
-            sf::Vector2f movement = direction * speed;
-            circle.move(movement);
-
-            // Collision with obstacles
+            // Check for collision after moving
             for (const auto &obj : obstacles)
             {
                 if (checkCollision(obj.getBounds()))
                 {
-                    circle.move(-movement);
-                    std::cout << "[LOG] Guard path blocked during chase\n";
+                    circle.move(-direction * moveSpeed * deltaTime); // Undo move if collided
                     break;
                 }
             }
         }
-        else
-        {
-            std::cout << "[DEBUG] Guard already at path target. No movement.\n";
-        }
-    }
-    else
-    {
-        std::cout << "[DEBUG] No path found for guard.\n";
     }
 }
 
@@ -179,8 +176,8 @@ void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfin
 
                 for (int i = 0; i < 4; i++)
                 {
-                    float offSetX = static_cast<float>((rand() % 81) - 40);
-                    float offSetY = static_cast<float>((rand() % 81) - 40);
+                    float offSetX = static_cast<float>((rand() % 201) - 100);
+                    float offSetY = static_cast<float>((rand() % 201) - 100);
                     sf::Vector2f candidate = lastKnownPlayerPosition + sf::Vector2f(offSetX, offSetY);
                     sf::Vector2i gridCandidate = {
                         static_cast<int>(candidate.x / tileSize),
@@ -363,8 +360,25 @@ void Guard::drawSightCone(sf::RenderWindow &window)
     }
     window.draw(cone);
 }
+void Guard::drawPath(sf::RenderWindow &window)
+{
 
-void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, float &tileSize)
+    for (auto &tile : currentPath)
+    {
+        float tileX = tile.x * TILE_SIZE;
+        float tileY = tile.y * TILE_SIZE;
+        sf::RectangleShape rect;
+        rect.setSize(sf::Vector2f(TILE_SIZE, TILE_SIZE));
+        rect.setPosition(sf::Vector2f(tileX, tileY));
+        rect.setFillColor(sf::Color(0, 255, 0, 100)); // semi-transparent green
+        rect.setOutlineColor(sf::Color::Green);
+        rect.setOutlineThickness(1.0f);
+
+        window.draw(rect);
+    }
+}
+
+void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, float &tileSize, float &deltaTime)
 {
     float dist = std::hypot(playerPos.x - circle.getPosition().x, playerPos.y - circle.getPosition().y);
     bool seesPlayer = canSeePlayer(playerPos, obstacles);
@@ -440,7 +454,7 @@ void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vec
             }
             else
             {
-                chase(playerPos, obstacles, pathfinder);
+                chase(playerPos, obstacles, pathfinder, deltaTime);
             }
         }
         break;

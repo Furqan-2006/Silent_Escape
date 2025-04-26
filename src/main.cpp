@@ -46,6 +46,8 @@ void renderMenu(sf::RenderWindow &window, Menu &menu)
 int main()
 {
     window.setFramerateLimit(60);
+
+    sf::Clock deltaClock;
     // GameoverText:start
     sf::Font font;
     if (!font.openFromFile("../assets/Fonts/CURLZ___.TTF"))
@@ -61,6 +63,8 @@ int main()
 
     while (window.isOpen())
     {
+        float deltaTime = deltaClock.restart().asSeconds();
+
         while (const std::optional event = window.pollEvent())
         {
             if (event->is<sf::Event::Closed>())
@@ -97,7 +101,7 @@ int main()
         window.display();
         if (gameState == GameState::LEVEL_1)
         {
-            level1.update(gameState);
+            level1.update(gameState, deltaTime);
         }
     }
     return 0;

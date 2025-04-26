@@ -10,7 +10,7 @@
 #include "pathfinder.hpp"
 
 #define PI 3.14159265358979323846f
-
+#define TILE_SIZE 40
 enum class GuardState
 {
     Patrolling,
@@ -46,7 +46,7 @@ private:
     const float alertDuration = 0.5f;
     const float searchDuration = 5.f;
     float viewDistance = 100.f;
-    float moveSpeed = 1.0f;
+    float moveSpeed = 60.0f;
     float pauseDurationAtTarget = 1.f;
 
     bool alertClockStarted = false;
@@ -65,6 +65,7 @@ private:
     sf::Vector2f lastKnownPlayerPosition;
     std::vector<sf::Vector2f> wanderPath;
     std::vector<sf::Vector2f> wanderTargets;
+    std::vector<sf::Vector2f> currentPath;
 
 public:
     Guard(const sf::Vector2f &startPos);
@@ -72,20 +73,22 @@ public:
 
     void patrol(const std::vector<GameObject> &obstacles);
     void alert();
-    void chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, PathFinder &pathfinder);
+    void chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, PathFinder &pathfinder, float &deltaTime);
     void search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, float &tileSize);
     void capture(GameState &gameState);
 
     bool canSeePlayer(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles);
     void drawSightCone(sf::RenderWindow &window);
+    void drawPath(sf::RenderWindow &window);
 
     // bool canHearPlayer();
 
-    void update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, float &tileSize);
+    void update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, float &tileSize, float &deltaTime);
     bool checkCollision(const sf::FloatRect &otherBounds) const;
     void draw(sf::RenderWindow &window);
 
     void setPosition(const sf::Vector2f &position);
     void setVelocity(const sf::Vector2f &dir);
     sf::FloatRect getBounds() const;
+
 };

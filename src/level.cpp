@@ -40,7 +40,7 @@ void Level::addGuard(const sf::Vector2f &position, const sf::Vector2f &direction
     Level::guards.push_back(guard);
 }
 
-void Level::update(GameState &gameState)
+void Level::update(GameState &gameState, float &deltaTime)
 {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
     {
@@ -61,7 +61,7 @@ void Level::update(GameState &gameState)
 
     for (auto &guard : guards)
     {
-        guard.update(player, player.getPosition(), obstacles, gameState, *pathfinder, window, tileSize);
+        guard.update(player, player.getPosition(), obstacles, gameState, *pathfinder, window, tileSize, deltaTime);
     }
 }
 
@@ -74,6 +74,7 @@ void Level::render()
     {
         guard.drawSightCone(window);
         guard.draw(window);
+        guard.drawPath(window);
     }
 
     player.draw(window);
