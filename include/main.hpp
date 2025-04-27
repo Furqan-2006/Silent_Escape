@@ -9,8 +9,10 @@
 #include "mapLoader.hpp"
 #include "interactionManager.hpp"
 #include "pathfinder.hpp"
+#include "levelmenu.hpp"
 
 void handleMenuInput(const sf::Event::KeyPressed &, Menu &, GameState &, sf::RenderWindow &);
+void handleLevelMenuInput(const sf::Event::KeyPressed &, LevelMenu &, GameState &, sf::RenderWindow &);
 void handleLevel1Input(const sf::Event::KeyPressed &, Player &, std::vector<GameObject> &);
 void updateGameOverState(GameState &, sf::Clock &);
 void renderMenu(sf::RenderWindow &, Menu &);

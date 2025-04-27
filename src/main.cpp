@@ -3,10 +3,13 @@
 sf::RenderWindow window(sf::VideoMode({800, 600}), "Silent Escape");
 GameState gameState = GameState::MENU;
 Menu menu(window.getSize().x, window.getSize().y);
+LevelMenu levelmenu(window.getSize().x, window.getSize().y);
 
 sf::Clock gameOverClock;
 float tileSize = 40.f;
 Level level1("../assets/maps/level1.txt", tileSize, window);
+
+Level level2("../assets/maps/level2.txt", tileSize, window);
 
 void handleMenuInput(const sf::Event::KeyPressed &key, Menu &menu, GameState &gameState, sf::RenderWindow &window)
 {
@@ -19,7 +22,7 @@ void handleMenuInput(const sf::Event::KeyPressed &key, Menu &menu, GameState &ga
         switch (menu.getSelectedIndex())
         {
         case 0:
-            gameState = GameState::LEVEL_1;
+            gameState = GameState::LEVEL_MENU;
             break;
         case 1:
             std::cout << "[LOG] Options Menu Selected (coming soon)\n";
@@ -32,15 +35,44 @@ void handleMenuInput(const sf::Event::KeyPressed &key, Menu &menu, GameState &ga
     }
 }
 
+void handleLevelMenuInput(const sf::Event::KeyPressed &key, LevelMenu &levelmenu, GameState &gameState, sf::RenderWindow &window)
+{
+    if (key.scancode == sf::Keyboard::Scancode::Right)
+        levelmenu.moveRight();
+    else if (key.scancode == sf::Keyboard::Scancode::Left)
+        levelmenu.moveLeft();
+    else if (key.scancode == sf::Keyboard::Scancode::Enter)
+    {
+        switch (levelmenu.getSelectedLevel())
+        {
+        case 0:
+            gameState = GameState::LEVEL_1;
+            break;
+        case 1:
+            gameState = GameState::LEVEL_2;
+            break;
+        }
+    }
+    else if (key.scancode == sf::Keyboard::Scancode::Escape)
+    {
+        gameState = GameState::MENU;
+    }
+}
+
 void updateGameOverState(GameState &gameState, sf::Clock &clock)
 {
-    if (clock.getElapsedTime().asSeconds() > 2.f)
+
+    if (clock.getElapsedTime().asSeconds() > 5.f)
         gameState = GameState::MENU;
 }
 
 void renderMenu(sf::RenderWindow &window, Menu &menu)
 {
     menu.draw(window);
+}
+void renderLevelMenu(sf::RenderWindow &window, LevelMenu &levelmenu)
+{
+    levelmenu.draw(window);
 }
 
 int main()
@@ -74,16 +106,21 @@ int main()
             {
                 if (gameState == GameState::MENU)
                     handleMenuInput(*keyPressed, menu, gameState, window);
+                else if (gameState == GameState::LEVEL_MENU)
+                    handleLevelMenuInput(*keyPressed, levelmenu, gameState, window);
                 else if (gameState == GameState::LEVEL_1)
                     level1.handleInput(*keyPressed);
+                else if (gameState == GameState::LEVEL_2)
+                    level2.handleInput(*keyPressed);
             }
-            if (const auto *mouseClicked = event->getIf<sf::Event::MouseButtonPressed>())
+            else if (const auto *mouseClicked = event->getIf<sf::Event::MouseButtonPressed>())
             {
-                sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
-                std::cout << "Pixel Pos: " << pixelPos.x << ", " << pixelPos.y << std::endl;
-                sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
-                std::cout << "World Pos: " << worldPos.x << ", " << worldPos.y << std::endl;
-                sf::sleep(sf::seconds(1));
+                if (gameState == GameState::LEVEL_MENU)
+                {
+                    sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
+                    sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
+                    levelmenu.onClick(worldPos);
+                }
             }
         }
 
@@ -94,11 +131,18 @@ int main()
         case GameState::MENU:
             renderMenu(window, menu);
             break;
+        case GameState::LEVEL_MENU:
+            renderLevelMenu(window, levelmenu);
+            break;
         case GameState::LEVEL_1:
             level1.render();
             break;
+        case GameState::LEVEL_2:
+            level2.render();
+            break;
         case GameState::GAME_OVER:
             window.draw(levelText);
+            gameOverClock.restart();
             updateGameOverState(gameState, gameOverClock);
             break;
         case GameState::EXIT:
@@ -110,6 +154,10 @@ int main()
         if (gameState == GameState::LEVEL_1)
         {
             level1.update(gameState, deltaTime);
+        }
+        else if (gameState == GameState::LEVEL_2)
+        {
+            level2.update(gameState, deltaTime);
         }
     }
     return 0;
