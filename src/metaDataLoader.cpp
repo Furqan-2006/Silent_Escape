@@ -34,10 +34,19 @@ LevelMetadata loadMetadata(const std::string &jsonPath, float tileSize)
             {
                 guard.direction = {g["dx"].get<float>(), g["dy"].get<float>()};
             }
-            else{
+            else
+            {
                 guard.direction = {0.f, 0.f};
             }
-            
+            if (g.contains("patrolPath"))
+            {
+                for (const auto &point : g["patrolPath"])
+                {
+                    float px = point["x"].get<float>() * tileSize;
+                    float py = point["y"].get<float>() * tileSize;
+                    guard.addPoint(sf::Vector2f(px, py));
+                }
+            }
             metadata.guards.push_back(guard);
         }
     }

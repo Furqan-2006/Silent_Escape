@@ -77,6 +77,14 @@ int main()
                 else if (gameState == GameState::LEVEL_1)
                     level1.handleInput(*keyPressed);
             }
+            if (const auto *mouseClicked = event->getIf<sf::Event::MouseButtonPressed>())
+            {
+                sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
+                std::cout << "Pixel Pos: " << pixelPos.x << ", " << pixelPos.y << std::endl;
+                sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
+                std::cout << "World Pos: " << worldPos.x << ", " << worldPos.y << std::endl;
+                sf::sleep(sf::seconds(1));
+            }
         }
 
         window.clear();

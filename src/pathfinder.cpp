@@ -1,193 +1,241 @@
 #include "PathFinder.hpp"
-
 #include <queue>
 #include <unordered_map>
-#include <unordered_set>
 #include <cmath>
 #include <algorithm>
+#include <limits>
+#include <iostream> // For debug logging
 
-#ifdef DEBUG
-#include <iostream>
-#define LOG(x) std::cout << x << std::endl
-#else
-#define LOG(x)
-#endif
-
-struct CompareFCost
+// Node struct represents a point in the search.
+struct PathFinder::Node
 {
-    bool operator()(const std::shared_ptr<TileNode> &a, const std::shared_ptr<TileNode> &b)
+    sf::Vector2f pos;
+    Node *parent;
+    float gCost, hCost;
+
+    Node(sf::Vector2f position = {}, Node *parentNode = nullptr)
+        : pos(position), parent(parentNode), gCost(0), hCost(0) {}
+
+    float fCost() const { return gCost + hCost; }
+};
+
+// Comparator for priority queue (min-heap) based on fCost.
+struct PathFinder::NodeComparator
+{
+    bool operator()(const Node *a, const Node *b) const
     {
         return a->fCost() > b->fCost();
     }
 };
 
-float heuristic(const sf::Vector2i &a, const sf::Vector2i &b)
+// Hash and equality for sf::Vector2f.
+struct PathFinder::Vector2fHash
 {
-    return static_cast<float>(std::abs(a.x - b.x) + std::abs(a.y - b.y));
-}
-
-PathFinder::PathFinder(int rows, int cols, float tileSize, const std::vector<std::vector<int>> &mapData)
-    : rows(rows), cols(cols), tileSize(tileSize), grid(mapData) {}
-
-bool PathFinder::isWalkable(int row, int col) const
-{
-    return (row >= 0 && row < rows && col >= 0 && col < cols && grid[row][col] == 0);
-}
-
-std::vector<sf::Vector2i> PathFinder::getNeighbours(const sf::Vector2i &pos) const
-{
-    static const std::vector<sf::Vector2i> directions = {
-        {0, -1}, {0, 1}, {-1, 0}, {1, 0}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-
-    std::vector<sf::Vector2i> neighbours;
-    for (const auto &dir : directions)
+    std::size_t operator()(const sf::Vector2f &v) const noexcept
     {
-        sf::Vector2i neighbour = pos + dir;
-        if (!isWalkable(neighbour.y, neighbour.x))
-            continue;
-
-        // Diagonal movement check
-        if (std::abs(dir.x) == 1 && std::abs(dir.y) == 1)
-        {
-            if (!isWalkable(pos.y, pos.x + dir.x) || !isWalkable(pos.y + dir.y, pos.x))
-                continue;
-        }
-
-        neighbours.push_back(neighbour);
+        auto h1 = std::hash<int>()(static_cast<int>(v.x));
+        auto h2 = std::hash<int>()(static_cast<int>(v.y));
+        return h1 ^ (h2 << 1);
     }
-    return neighbours;
+};
+
+struct PathFinder::Vector2fEq
+{
+    bool operator()(const sf::Vector2f &a, const sf::Vector2f &b) const noexcept
+    {
+        return a.x == b.x && a.y == b.y;
+    }
+};
+
+PathFinder::PathFinder(float stepSize, int worldWidth, int worldHeight, const std::vector<std::vector<int>> &mapData, int tileSize)
+    : step(stepSize), width(worldWidth), height(worldHeight), tileSize(tileSize)
+{
+    std::cout << "[PathFinder] Initialized with stepSize=" << stepSize
+              << ", worldSize=(" << worldWidth << "x" << worldHeight
+              << "), tileSize=" << tileSize << "\n";
 }
 
-std::vector<sf::Vector2f> PathFinder::findPath(const sf::Vector2f &startPos, const sf::Vector2f &endPos)
+// Round any pixel position to the center of its tile
+sf::Vector2f PathFinder::roundToTileCenter(const sf::Vector2f &pixelPos) const
 {
-    sf::Vector2i start(static_cast<int>(startPos.x / tileSize), static_cast<int>(startPos.y / tileSize));
-    sf::Vector2i end(static_cast<int>(endPos.x / tileSize), static_cast<int>(endPos.y / tileSize));
+    int tileX = static_cast<int>(pixelPos.x) / tileSize;
+    int tileY = static_cast<int>(pixelPos.y) / tileSize;
+    sf::Vector2f rounded(tileX * tileSize + tileSize / 2.f, tileY * tileSize + tileSize / 2.f);
 
-    if (!isWalkable(start.y, start.x) || !isWalkable(end.y, end.x))
+    std::cout << "[roundToTileCenter] (" << pixelPos.x << "," << pixelPos.y
+              << ") -> (" << rounded.x << "," << rounded.y << ")\n";
+    return rounded;
+}
+
+// Check if a pixel position is walkable by checking its tile
+bool PathFinder::isWalkable(const sf::Vector2f &point) const
+{
+    int tileX = static_cast<int>(point.x) / tileSize;
+    int tileY = static_cast<int>(point.y) / tileSize;
+
+    if (tileX < 0 || tileX >= width || tileY < 0 || tileY >= height)
+    {
+        std::cout << "[isWalkable] (" << point.x << "," << point.y << ") -> OUT OF BOUNDS\n";
+        return false;
+    }
+
+    // Replace this with your real collision logic (example: tileMap[tileY][tileX] != WALL)
+    bool walkable = true; // Placeholder: every tile is walkable
+    std::cout << "[isWalkable] (" << point.x << "," << point.y << ") -> tile ("
+              << tileX << "," << tileY << ") -> " << (walkable ? "WALKABLE" : "BLOCKED") << "\n";
+    return walkable;
+}
+
+std::vector<sf::Vector2f> PathFinder::findPath(sf::Vector2f start, sf::Vector2f goal)
+{
+    std::cout << "\n[findPath] START Pathfinding from (" << start.x << ", " << start.y
+              << ") to (" << goal.x << ", " << goal.y << ")\n";
+
+    // Round start and goal to tile centers
+    start = roundToTileCenter(start);
+    goal = roundToTileCenter(goal);
+
+    std::cout << "[findPath] Rounded positions - start: (" << start.x << "," << start.y
+              << "), goal: (" << goal.x << "," << goal.y << ")\n";
+
+    if (!isWalkable(start))
+    {
+        std::cerr << "[findPath] ERROR: Start position is not walkable!\n";
         return {};
+    }
 
-    auto toKey = [&](const sf::Vector2i &p)
-    { return p.y * cols + p.x; };
-
-    std::priority_queue<std::shared_ptr<TileNode>, std::vector<std::shared_ptr<TileNode>>, CompareFCost> openSet;
-    std::unordered_map<int, std::shared_ptr<TileNode>> allNodes;
-    std::unordered_set<int> closedSet;
-
-    auto startNode = std::make_shared<TileNode>(TileNode{start, 0.0f, heuristic(start, end), nullptr});
-    openSet.push(startNode);
-    allNodes[toKey(start)] = startNode;
-
-    while (!openSet.empty())
+    if (!isWalkable(goal))
     {
-        auto current = openSet.top();
-        openSet.pop();
+        std::cerr << "[findPath] ERROR: Goal position is not walkable!\n";
+        return {};
+    }
 
-        int currentKey = toKey(current->position);
-        if (closedSet.count(currentKey))
+    const std::vector<sf::Vector2f> directions = {
+        {step, 0}, {-step, 0}, {0, step}, {0, -step}, {step, step}, {step, -step}, {-step, step}, {-step, -step}};
+
+    std::unordered_map<sf::Vector2f, Node *, Vector2fHash, Vector2fEq> allNodes;
+    std::priority_queue<Node *, std::vector<Node *>, NodeComparator> openHeap;
+    std::unordered_map<sf::Vector2f, bool, Vector2fHash, Vector2fEq> closedSet;
+
+    Node *startNode = new Node(start, nullptr);
+    startNode->gCost = 0;
+    startNode->hCost = hypot(goal.x - start.x, goal.y - start.y);
+    allNodes[start] = startNode;
+    openHeap.push(startNode);
+
+    std::cout << "[findPath] Initial node - pos: (" << startNode->pos.x << "," << startNode->pos.y
+              << "), gCost: " << startNode->gCost << ", hCost: " << startNode->hCost
+              << ", fCost: " << startNode->fCost() << "\n";
+
+    Node *goalNode = nullptr;
+    int iterations = 0;
+    int maxIterations = 10000; // Safety limit
+
+    while (!openHeap.empty() && iterations++ < maxIterations)
+    {
+        Node *current = openHeap.top();
+        openHeap.pop();
+
+        std::cout << "\n[findPath] Processing node #" << iterations
+                  << " - pos: (" << current->pos.x << "," << current->pos.y
+                  << "), fCost: " << current->fCost() << " (g=" << current->gCost
+                  << ", h=" << current->hCost << ")\n";
+
+        if (closedSet[current->pos])
+        {
+            std::cout << "[findPath] Node already in closed set, skipping\n";
             continue;
-
-        closedSet.insert(currentKey);
-
-        if (current->position == end)
-        {
-            std::vector<sf::Vector2f> path;
-            auto node = current;
-            while (node)
-            {
-                path.push_back(sf::Vector2f(node->position.x * tileSize + tileSize / 2, node->position.y * tileSize + tileSize / 2));
-                node = node->parent;
-            }
-            std::reverse(path.begin(), path.end());
-
-            if (!path.empty() && std::hypot(endPos.x - path.back().x, endPos.y - path.back().y) < tileSize)
-                path.push_back(endPos);
-
-            return smoothPath(path);
         }
 
-        for (const auto &neighborPos : getNeighbours(current->position))
+        if (current->pos == goal)
         {
-            int neighborKey = toKey(neighborPos);
-            if (closedSet.count(neighborKey))
+            std::cout << "[findPath] GOAL REACHED!\n";
+            goalNode = current;
+            break;
+        }
+
+        closedSet[current->pos] = true;
+        std::cout << "[findPath] Added to closed set. Closed set size: " << closedSet.size() << "\n";
+
+        for (const sf::Vector2f &dir : directions)
+        {
+            sf::Vector2f neighborPos = current->pos + dir;
+            std::cout << "[findPath] Checking neighbor at (" << neighborPos.x << "," << neighborPos.y << ")\n";
+
+            if (!isWalkable(neighborPos))
+            {
+                std::cout << "[findPath] Neighbor not walkable, skipping\n";
                 continue;
+            }
 
-            float cost = (neighborPos.x == current->position.x || neighborPos.y == current->position.y) ? 1.0f : std::sqrt(2.0f);
-            float tentativeGCost = current->gCost + cost;
+            float moveCost = hypot(dir.x, dir.y);
+            float tentativeG = current->gCost + moveCost;
 
-            auto it = allNodes.find(neighborKey);
-            if (it == allNodes.end() || tentativeGCost < it->second->gCost)
+            Node *neighborNode;
+            auto it = allNodes.find(neighborPos);
+            if (it == allNodes.end())
             {
-                auto neighborNode = std::make_shared<TileNode>(TileNode{
-                    neighborPos, tentativeGCost, heuristic(neighborPos, end), current});
+                neighborNode = new Node(neighborPos, current);
+                neighborNode->gCost = tentativeG;
+                neighborNode->hCost = hypot(goal.x - neighborPos.x, goal.y - neighborPos.y);
+                allNodes[neighborPos] = neighborNode;
+                openHeap.push(neighborNode);
 
-                openSet.push(neighborNode);
-                allNodes[neighborKey] = neighborNode;
+                std::cout << "[findPath] New neighbor node - pos: (" << neighborPos.x << "," << neighborPos.y
+                          << "), gCost: " << tentativeG << ", hCost: " << neighborNode->hCost
+                          << ", fCost: " << neighborNode->fCost() << "\n";
+            }
+            else
+            {
+                neighborNode = it->second;
+                if (tentativeG >= neighborNode->gCost)
+                {
+                    std::cout << "[findPath] Existing neighbor has better path (current gCost: "
+                              << neighborNode->gCost << " <= tentative: " << tentativeG << "), skipping\n";
+                    continue;
+                }
+
+                neighborNode->gCost = tentativeG;
+                neighborNode->parent = current;
+                openHeap.push(neighborNode);
+
+                std::cout << "[findPath] Updated neighbor node - pos: (" << neighborPos.x << "," << neighborPos.y
+                          << "), new gCost: " << tentativeG << ", hCost: " << neighborNode->hCost
+                          << ", fCost: " << neighborNode->fCost() << "\n";
             }
         }
     }
 
-    return {};
-}
-
-std::vector<sf::Vector2f> PathFinder::smoothPath(const std::vector<sf::Vector2f> &path) const
-{
-    if (path.size() < 2)
-        return path;
-
-    std::vector<sf::Vector2f> result;
-    size_t i = 0;
-
-    auto hasLineOfSight = [&](const sf::Vector2i &start, const sf::Vector2i &end) -> bool
+    if (iterations >= maxIterations)
     {
-        int x0 = start.x, y0 = start.y;
-        int x1 = end.x, y1 = end.y;
-        int dx = std::abs(x1 - x0), dy = std::abs(y1 - y0);
-        int sx = (x0 < x1) ? 1 : -1;
-        int sy = (y0 < y1) ? 1 : -1;
-        int err = dx - dy;
-
-        while (true)
-        {
-            if (!isWalkable(y0, x0))
-                return false;
-            if (x0 == x1 && y0 == y1)
-                break;
-
-            int e2 = 2 * err;
-            if (e2 > -dy)
-            {
-                err -= dy;
-                x0 += sx;
-            }
-            if (e2 < dx)
-            {
-                err += dx;
-                y0 += sy;
-            }
-        }
-        return true;
-    };
-
-    while (i < path.size())
-    {
-        size_t j = i + 1;
-        sf::Vector2i from(static_cast<int>(path[i].x / tileSize), static_cast<int>(path[i].y / tileSize));
-
-        while (j < path.size())
-        {
-            sf::Vector2i to(static_cast<int>(path[j].x / tileSize), static_cast<int>(path[j].y / tileSize));
-            if (!hasLineOfSight(from, to))
-                break;
-            ++j;
-        }
-
-        result.push_back(path[i]);
-        i = (j > i + 1) ? (j - 1) : (i + 1);
+        std::cerr << "[findPath] WARNING: Exceeded maximum iterations (" << maxIterations << ")\n";
     }
 
-    if (!result.empty() && result.back() != path.back())
-        result.push_back(path.back());
+    std::vector<sf::Vector2f> path;
+    if (goalNode)
+    {
+        std::cout << "[findPath] Reconstructing path...\n";
+        for (Node *node = goalNode; node != nullptr; node = node->parent)
+        {
+            path.push_back(node->pos);
+            std::cout << "  - Path point: (" << node->pos.x << "," << node->pos.y << ")\n";
+        }
+        std::reverse(path.begin(), path.end());
+    }
+    else
+    {
+        std::cout << "[findPath] No path found to goal\n";
+    }
 
-    return result;
+    // Cleanup
+    for (auto &pair : allNodes)
+    {
+        delete pair.second;
+    }
+
+    std::cout << "[findPath] COMPLETE. Path length: " << path.size()
+              << ", Total nodes processed: " << iterations
+              << ", Total nodes created: " << allNodes.size() << "\n\n";
+
+    return path;
 }
-

@@ -15,13 +15,14 @@ class Level
 private:
     sf::RenderWindow &window;
     float tileSize;
+    float stepSize = tileSize;
 
     std::vector<GameObject> obstacles;
     std::vector<Guard> guards;
     Player player;
     std::unique_ptr<PathFinder> pathfinder;
 
-    void addGuard(const sf::Vector2f &position, const sf::Vector2f &direction);
+    void addGuard(const sf::Vector2f &position, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath);
 
 public:
     Level(const std::string &mapPath, float tileSize, sf::RenderWindow &win);

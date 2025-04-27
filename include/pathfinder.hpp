@@ -1,33 +1,31 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
 #include <vector>
-#include <memory>
-
-struct TileNode
-{
-    sf::Vector2i position;
-    float gCost, hCost;
-    std::shared_ptr<TileNode> parent;
-
-    float fCost() const { return gCost + hCost; }
-    bool operator==(const TileNode &other) const { return position == other.position; }
-};
 
 class PathFinder
 {
 private:
     std::vector<std::vector<int>> grid;
-    int rows, cols;
+
+    struct Node;
+    struct NodeComparator;
+    struct Vector2fHash;
+    struct Vector2fEq;
+    float step;
+    int width, height;
+
     float tileSize;
 
-    std::vector<sf::Vector2i> getNeighbours(const sf::Vector2i &pos) const;
-    std::vector<sf::Vector2f> smoothPath(const std::vector<sf::Vector2f> &path) const;
-
 public:
-    bool isWalkable(int row, int col) const;
-    PathFinder() = default;
-    PathFinder(int rows, int cols, float tileSize, const std::vector<std::vector<int>> &mapData);
+    PathFinder(float stepSize, int worldWidth, int worldHeight, const std::vector<std::vector<int>> &mapData, int tileSize);
 
-    std::vector<sf::Vector2f> findPath(const sf::Vector2f &startPos, const sf::Vector2f &endPos);
+    // Find a path from start to goal (both world pixel positions).
+    // Returns a vector of positions from start to goal (inclusive).
+    std::vector<sf::Vector2f> findPath(sf::Vector2f start, sf::Vector2f goal);
+
+    // Customize your own walkability check based on your game collision.
+    sf::Vector2f roundToTileCenter(const sf::Vector2f &pixelPos) const;
+    void debugGrid(sf::Vector2f start, sf::Vector2f goal) const;
+    bool isWalkable(const sf::Vector2f &point) const;
 };

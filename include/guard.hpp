@@ -10,7 +10,7 @@
 #include "pathfinder.hpp"
 
 #define PI 3.14159265358979323846f
-#define TILE_SIZE 40
+#define TILE_SIZE 4
 enum class GuardState
 {
     Patrolling,
@@ -33,6 +33,8 @@ private:
     SearchPhase currentPhase = SearchPhase::LookAround;
 
     sf::Vector2f initialPosition;
+    std::vector<sf::Vector2f> patrolPath;
+    std::vector<sf::Vector2f> returnPath;
 
     sf::CircleShape circle;
     sf::CircleShape lastSeenMarker;
@@ -48,38 +50,49 @@ private:
     float viewDistance = 100.f;
     float moveSpeed = 60.0f;
     float pauseDurationAtTarget = 1.f;
+    float pathTimer = 0.f;
+    float repathInterval = 0.5f;
 
+    bool generatedInitialPatrolPath = false;
     bool alertClockStarted = false;
     bool returnedToInitialPos = false;
     bool sightCone = true;
     bool searchClockStarted = false;
     bool isPausingAtTarget = false;
     bool generatedInitialWanderPath = false;
+    bool hasCurrentWanderPath = false;
+    bool isReturningToPatrol = false;
 
+    int currentPatrolIndex = 0;
+    int currentPatrolPathIndex = 0;
     int currentWanderIndex = 0;
     int currentWanderPathIndex = 0;
     int currentWanderTarget = 0;
+    int returnPathIndex = 0;
 
     sf::Color sightColor = sf::Color(255, 255, 0, 100);
     sf::Vector2f searchDirection;
     sf::Vector2f lastKnownPlayerPosition;
+    std::vector<sf::Vector2f> patrolPathToTarget;
     std::vector<sf::Vector2f> wanderPath;
     std::vector<sf::Vector2f> wanderTargets;
     std::vector<sf::Vector2f> currentPath;
+
+    float tileSize = 40.f;
 
 public:
     Guard(const sf::Vector2f &startPos);
     Guard();
 
-    void patrol(const std::vector<GameObject> &obstacles);
+    void patrol(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, float &deltaTime);
     void alert();
     void chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, PathFinder &pathfinder, float &deltaTime);
-    void search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, float &tileSize);
-    void capture(GameState &gameState);
+    void search(const std::vector<GameObject> &obstacles, PathFinder &pathfinder, const sf::Vector2f &lastPlayerPos, float &tileSize, float &deltaTime);
+    void capture(GameState &gameState, const sf::Vector2f &playerPos);
 
     bool canSeePlayer(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles);
     void drawSightCone(sf::RenderWindow &window);
-    void drawPath(sf::RenderWindow &window);
+    // void drawPath(sf::RenderWindow &window);
 
     // bool canHearPlayer();
 
@@ -89,6 +102,7 @@ public:
 
     void setPosition(const sf::Vector2f &position);
     void setVelocity(const sf::Vector2f &dir);
-    sf::FloatRect getBounds() const;
+    void setPatrolPath(const std::vector<sf::Vector2f> &path);
 
+    sf::FloatRect getBounds() const;
 };
