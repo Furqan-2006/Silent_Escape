@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include "gameObj.hpp"
 #include "pathfinder.hpp"
+#include <unordered_map>
 
 class Player
 {
@@ -12,6 +13,8 @@ protected:
     float speed;
     bool disguised;
     bool hidden;
+    std::unordered_map<std::string, sf::Clock> actionClocks;
+    float actionCooldown;
 
 public:
     Player(float sp = 1.f);
@@ -19,6 +22,8 @@ public:
     void moveDown(const std::vector<GameObject> &obstacles);
     void moveRight(const std::vector<GameObject> &obstacles);
     void moveLeft(const std::vector<GameObject> &obstacles);
+
+    void update();
 
     void setDisguised(bool Value);
     bool isDisguised() const;

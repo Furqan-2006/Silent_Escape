@@ -18,6 +18,7 @@
         "${workspaceFolder}/src/level.cpp",
         "${workspaceFolder}/src/metaDataLoader.cpp",
         "${workspaceFolder}/src/levelMenu.cpp",
+        "${workspaceFolder}/src/levelmanager.cpp",
         "-o",
         "${workspaceFolder}/build/silent_escape",
         "-I",

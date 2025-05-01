@@ -8,5 +8,6 @@ enum class GameState
     LEVEL_2,
     LEVEL_3,
     GAME_OVER,
+    LEVEL_CLEAR,
     EXIT
 };

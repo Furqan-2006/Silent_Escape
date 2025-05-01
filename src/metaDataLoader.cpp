@@ -42,8 +42,8 @@ LevelMetadata loadMetadata(const std::string &jsonPath, float tileSize)
             {
                 for (const auto &point : g["patrolPath"])
                 {
-                    float px = point["x"].get<float>() * tileSize / 2.f;
-                    float py = point["y"].get<float>() * tileSize / 2.f;
+                    float px = point["x"].get<float>() * tileSize;
+                    float py = point["y"].get<float>() * tileSize;
                     guard.addPoint(sf::Vector2f(px, py));
                 }
             }

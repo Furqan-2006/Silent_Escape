@@ -327,7 +327,7 @@ void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfin
             {
                 direction /= distance;
                 facingDir = direction;
-                circle.move(direction * moveSpeed * deltaTime); // Not fixed 1.f, scaled with deltaTime
+                circle.move(direction * moveSpeed * deltaTime);
 
                 for (const auto &obj : obstacles)
                 {
@@ -353,14 +353,14 @@ void Guard::search(const std::vector<GameObject> &obstacles, PathFinder &pathfin
     }
 }
 
-void Guard::capture(GameState &gameState, const sf::Vector2f &playerPos)
+void Guard::capture(GameState &gameState, const sf::Vector2f &playerPos, sf::Clock &gameOverClock)
 {
     std::cout << "[LOG] Guard captured the player!" << std::endl;
     std::cout << "[LOG] player Pos: " << playerPos.x << ", " << playerPos.y << std::endl;
 
     circle.setFillColor(sf::Color::White);
-    // sf::sleep(sf::seconds(3));
     gameState = GameState::GAME_OVER;
+    gameOverClock.restart();
 }
 
 bool Guard::canSeePlayer(const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles)
@@ -422,7 +422,7 @@ void Guard::drawSightCone(sf::RenderWindow &window)
     window.draw(cone);
 }
 
-void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, float &tileSize, float &deltaTime)
+void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vector<GameObject> &obstacles, GameState &gameState, PathFinder &pathfinder, sf::RenderWindow &window, float &tileSize, float &deltaTime, sf::Clock &gameOverClock)
 {
     float dist = std::hypot(playerPos.x - circle.getPosition().x, playerPos.y - circle.getPosition().y);
     bool seesPlayer = canSeePlayer(playerPos, obstacles);
@@ -494,7 +494,7 @@ void Guard::update(Player &player, const sf::Vector2f &playerPos, const std::vec
         {
             if (circle.getGlobalBounds().findIntersection(player.getBounds()).has_value())
             {
-                capture(gameState, playerPos);
+                capture(gameState, playerPos, gameOverClock);
             }
             else
             {
@@ -556,4 +556,9 @@ void Guard::setPatrolPath(const std::vector<sf::Vector2f> &path)
 sf::FloatRect Guard::getBounds() const
 {
     return circle.getGlobalBounds();
+}
+void Guard::resetState()
+{
+    state = GuardState::Patrolling;
+    circle.setFillColor(sf::Color::Cyan);
 }

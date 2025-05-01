@@ -5,7 +5,7 @@ LevelTile::LevelTile(float x, float y, float size)
     tile.setSize({size, size});
     tile.setPosition({x, y});
     tile.setFillColor(sf::Color::White);
-    tile.setOutlineColor(sf::Color::Black);
+    tile.setOutlineColor(sf::Color::Red);
     tile.setOutlineThickness(2);
 }
 
@@ -63,6 +63,7 @@ LevelMenu::LevelMenu(float width, float height)
     }
     tiles[0].unlock();
     tiles[1].unlock();
+    tiles[2].unlock();
     tiles[0].select();
 }
 

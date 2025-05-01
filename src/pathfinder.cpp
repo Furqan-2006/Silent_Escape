@@ -47,7 +47,7 @@ struct PathFinder::Vector2fEq
     }
 };
 
-PathFinder::PathFinder(float stepSize, int worldWidth, int worldHeight, const std::vector<std::vector<int>> &mapData, int tileSize)
+PathFinder::PathFinder(float stepSize, int worldWidth, int worldHeight, const std::vector<std::vector<int>> &mapData, float tileSize)
     : step(stepSize), width(worldWidth), height(worldHeight), tileSize(tileSize)
 {
     std::cout << "[PathFinder] Initialized with stepSize=" << stepSize

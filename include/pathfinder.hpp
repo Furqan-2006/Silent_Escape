@@ -12,13 +12,13 @@ private:
     struct NodeComparator;
     struct Vector2fHash;
     struct Vector2fEq;
-    float step;
     int width, height;
 
     float tileSize;
+    float step;
 
 public:
-    PathFinder(float stepSize, int worldWidth, int worldHeight, const std::vector<std::vector<int>> &mapData, int tileSize);
+    PathFinder(float stepSize, int worldWidth, int worldHeight, const std::vector<std::vector<int>> &mapData, float tileSize = 40.f);
 
     // Find a path from start to goal (both world pixel positions).
     // Returns a vector of positions from start to goal (inclusive).
@@ -26,6 +26,6 @@ public:
 
     // Customize your own walkability check based on your game collision.
     sf::Vector2f roundToTileCenter(const sf::Vector2f &pixelPos) const;
-    void debugGrid(sf::Vector2f start, sf::Vector2f goal) const;
+    // void debugGrid(sf::Vector2f start, sf::Vector2f goal) const;
     bool isWalkable(const sf::Vector2f &point) const;
 };

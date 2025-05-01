@@ -9,12 +9,15 @@
 #include "pathfinder.hpp"
 #include "gameStateEnum.hpp"
 #include "interactionManager.hpp"
+#include "metaDataLoader.hpp"
 
 class Level
 {
 private:
     sf::RenderWindow &window;
-    float tileSize;
+    sf::View mapView;
+
+    float tileSize = 40.;
     float stepSize = tileSize;
 
     std::vector<GameObject> obstacles;
@@ -22,12 +25,25 @@ private:
     Player player;
     std::unique_ptr<PathFinder> pathfinder;
 
+    float mapHeight;
+    float mapWidth;
+
+    bool isPaused = false;
+
+    LevelMetadata meta;
+
     void addGuard(const sf::Vector2f &position, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath);
 
 public:
     Level(const std::string &mapPath, float tileSize, sf::RenderWindow &win);
 
     void handleInput(const sf::Event::KeyPressed &key);
-    void update(GameState &gameState, float &deltaTime);
-    void render();
+    void update(GameState &gameState, float &deltaTime, sf::Clock &gameOverClock);
+    void render(sf::RenderWindow &window);
+    void drawPauseOverlay(sf::RenderWindow &window);
+    void reset();
+    void pause();
+
+    sf::Vector2f getPlayerPos() const;
+    sf::Vector2f getMapSize() const;
 };
