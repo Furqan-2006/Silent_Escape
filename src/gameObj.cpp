@@ -24,6 +24,17 @@ sf::Vector2f GameObject::getPosition() const
 {
     return shape.getPosition();
 }
+sf::Vector2i GameObject::getGridPosition(float tileSize) const
+{
+    sf::Vector2f worldPos = getPosition();
+    return sf::Vector2i(
+        static_cast<int>(worldPos.x / tileSize),
+        static_cast<int>(worldPos.y / tileSize));
+}
+void GameObject::setPosition(sf::Vector2f &pos)
+{
+    shape.setPosition(pos);
+}
 void GameObject::setFillColor(sf::Color color)
 {
     shape.setFillColor(color);

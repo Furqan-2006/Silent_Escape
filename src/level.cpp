@@ -1,6 +1,7 @@
 #include "level.hpp"
 #include "mapLoader.hpp"
 #include "metaDataLoader.hpp"
+#include "utils.hpp"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -125,13 +126,21 @@ void Level::render(sf::RenderWindow &window)
 
     // Draw map and entities
     for (auto &ob : obstacles)
+    {
+        sf::Vector2f isoPos = toIsometric(ob.getGridPosition(tileSize), tileSize, tileSize / 2.f);
+        ob.setPosition(isoPos);
         ob.draw(window);
+    }
     for (auto &guard : guards)
     {
+        sf::Vector2f isoPos = toIsometric(guard.getGridPosition(tileSize), tileSize, tileSize / 2.f);
+        guard.setPosition(isoPos);
         guard.drawSightCone(window);
         guard.draw(window);
         // guard.drawPath(window);
     }
+    sf::Vector2f isoPos = toIsometric(player.getGridPosition(tileSize), tileSize, tileSize / 2.f);
+    player.setPosition(isoPos);
     player.draw(window);
     if (isPaused)
     {

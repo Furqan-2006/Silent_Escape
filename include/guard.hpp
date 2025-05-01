@@ -101,6 +101,7 @@ public:
     bool checkCollision(const sf::FloatRect &otherBounds) const;
     void draw(sf::RenderWindow &window);
 
+    sf::Vector2i getGridPosition(float tileSize) const;
     void setPosition(const sf::Vector2f &position);
     void setVelocity(const sf::Vector2f &dir);
     void setPatrolPath(const std::vector<sf::Vector2f> &path);

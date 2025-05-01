@@ -540,6 +540,13 @@ void Guard::setPosition(const sf::Vector2f &position)
     circle.setPosition(position);
     initialPosition = position;
 }
+sf::Vector2i Guard::getGridPosition(float tileSize) const
+{
+    sf::Vector2f worldPos = circle.getPosition();
+    return sf::Vector2i(
+        static_cast<int>(worldPos.x / tileSize),
+        static_cast<int>(worldPos.y / tileSize));
+}
 
 void Guard::setVelocity(const sf::Vector2f &dir)
 {

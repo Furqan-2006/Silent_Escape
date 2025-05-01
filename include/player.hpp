@@ -2,42 +2,58 @@
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <algorithm>
 #include "gameObj.hpp"
 #include "pathfinder.hpp"
 #include <unordered_map>
+#include "distraction.hpp"
 
 class Player
 {
 protected:
     sf::RectangleShape rect;
-    float speed;
+
     bool disguised;
     bool hidden;
+
     std::unordered_map<std::string, sf::Clock> actionClocks;
-    float actionCooldown;
+    std::unordered_map<std::string, float> actionCooldowns;
+    std::vector<Distraction> distractions;
+
+    float speed;
 
 public:
     Player(float sp = 1.f);
+
+    bool canMove(sf::Vector2f offset, const std::vector<GameObject> &obstacles);
     void moveUp(const std::vector<GameObject> &obstacles);
     void moveDown(const std::vector<GameObject> &obstacles);
     void moveRight(const std::vector<GameObject> &obstacles);
     void moveLeft(const std::vector<GameObject> &obstacles);
 
+    void draw(sf::RenderWindow &window);
     void update();
 
     void setDisguised(bool Value);
-    bool isDisguised() const;
     void setHidden(bool Value);
+    void setActionCooldown(std::string action, float duration);
+    void setPosition(sf::Vector2f pos);
+
+    bool isDisguised() const;
     bool isHidden() const;
+    // bool hasItem() const;
+    bool isOnCooldown(std::string action) const;
+    bool checkCollision(const sf::FloatRect &otherBounds) const;
+
+    sf::FloatRect getBounds() const;
+    sf::Vector2f getPosition() const;
+    sf::Vector2i getGridPosition(float tileSize) const;
 
     void disguise();
     void hide();
     void hack();
-    void distract();
+    void distract(); // throw distraction
+    void cleanupDistractions();
 
-    void draw(sf::RenderWindow &window);
-    bool checkCollision(const sf::FloatRect &otherBounds) const;
-    sf::FloatRect getBounds() const;
-    sf::Vector2f getPosition() const;
-    void setPosition(sf::Vector2f pos);
+    const std::vector<Distraction> &getDistractions() const;
 };
