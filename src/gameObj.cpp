@@ -1,6 +1,6 @@
 #include "gameObj.hpp"
 
-GameObject::GameObject(float rad, int points, sf::Vector2f pos, sf::Color color, ObjectType t) : type(t)
+GameObject::GameObject(float rad, int points, sf::Vector2f pos, sf::Color color, ObjectType t, sf::Vector2i gridP) : type(t), gridPos(gridP)
 {
     shape.setPointCount(points);
     shape.setRadius(rad);
@@ -20,18 +20,18 @@ ObjectType GameObject::getType() const
 {
     return type;
 }
-sf::Vector2f GameObject::getPosition() const
+
+sf::Vector2f GameObject::getPos() const
 {
     return shape.getPosition();
 }
-sf::Vector2i GameObject::getGridPosition(float tileSize) const
+
+sf::Vector2i GameObject::getGridPosition() const
 {
-    sf::Vector2f worldPos = getPosition();
-    return sf::Vector2i(
-        static_cast<int>(worldPos.x / tileSize),
-        static_cast<int>(worldPos.y / tileSize));
+    return gridPos;
 }
-void GameObject::setPosition(sf::Vector2f &pos)
+
+void GameObject::setPos(sf::Vector2f &pos)
 {
     shape.setPosition(pos);
 }

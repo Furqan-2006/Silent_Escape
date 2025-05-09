@@ -144,7 +144,7 @@ void Player::distract() // throw distractions
         return;
     }
     std::cout << "[LOG] Player is distracting guard";
-    Distraction thing(getPosition(), 100.f);
+    Distraction thing(getPos(), 100.f);
     distractions.push_back(thing);
     actionClocks["distract"].restart();
 }
@@ -192,21 +192,24 @@ void Player::draw(sf::RenderWindow &window)
 {
     window.draw(rect);
 }
-void Player::setPosition(sf::Vector2f pos)
+void Player::setPos(sf::Vector2f &pos)
 {
     rect.setPosition(pos);
 }
-sf::Vector2f Player::getPosition() const
+void Player::setGridPos(sf::Vector2i &pos)
+{
+    gridPosition = pos;
+}
+
+sf::Vector2f Player::getPos() const
 {
     return rect.getPosition();
 }
-sf::Vector2i Player::getGridPosition(float tileSize) const
+sf::Vector2i Player::getGridPosition() const
 {
-    sf::Vector2f worldPos = rect.getPosition();
-    return sf::Vector2i(
-        static_cast<int>(worldPos.x / tileSize),
-        static_cast<int>(worldPos.y / tileSize));
+    return gridPosition;
 }
+
 sf::FloatRect Player::getBounds() const
 {
     return rect.getGlobalBounds();

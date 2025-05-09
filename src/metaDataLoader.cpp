@@ -20,6 +20,8 @@ LevelMetadata loadMetadata(const std::string &jsonPath, float tileSize)
     {
         metadata.playerPos.x = data["player"]["x"].get<float>() * tileSize;
         metadata.playerPos.y = data["player"]["y"].get<float>() * tileSize;
+        metadata.playerGridPos.x = data["player"]["x"].get<int>();
+        metadata.playerGridPos.y = data["player"]["y"].get<int>();
     }
 
     if (data.contains("guards"))
@@ -29,6 +31,8 @@ LevelMetadata loadMetadata(const std::string &jsonPath, float tileSize)
             GuardMetadata guard;
             guard.position.x = g["x"].get<float>() * tileSize;
             guard.position.y = g["y"].get<float>() * tileSize;
+            guard.gridPos.y = g["y"].get<int>();
+            guard.gridPos.y = g["y"].get<int>();
 
             if (g.contains("dx") && g.contains("dy"))
             {

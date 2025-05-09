@@ -17,7 +17,7 @@ void Distraction::draw(sf::RenderWindow &window)
 {
     window.draw(stone);
 }
-sf::Vector2f Distraction::getPosition() const
+sf::Vector2f Distraction::getPos() const
 {
     return stone.getPosition();
 }

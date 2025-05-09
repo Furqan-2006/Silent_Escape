@@ -33,6 +33,7 @@ private:
     SearchPhase currentPhase = SearchPhase::LookAround;
 
     sf::Vector2f initialPosition;
+    sf::Vector2i gridPosition;
     std::vector<sf::Vector2f> patrolPath;
     std::vector<sf::Vector2f> returnPath;
 
@@ -101,8 +102,10 @@ public:
     bool checkCollision(const sf::FloatRect &otherBounds) const;
     void draw(sf::RenderWindow &window);
 
-    sf::Vector2i getGridPosition(float tileSize) const;
-    void setPosition(const sf::Vector2f &position);
+    sf::Vector2i getGridPosition() const;
+
+    void setPos(const sf::Vector2f &position);
+    void setGridPos(const sf::Vector2i &position);
     void setVelocity(const sf::Vector2f &dir);
     void setPatrolPath(const std::vector<sf::Vector2f> &path);
     void resetState();

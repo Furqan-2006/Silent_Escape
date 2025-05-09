@@ -13,6 +13,8 @@ class Player
 protected:
     sf::RectangleShape rect;
 
+    sf::Vector2i gridPosition;
+
     bool disguised;
     bool hidden;
 
@@ -37,7 +39,8 @@ public:
     void setDisguised(bool Value);
     void setHidden(bool Value);
     void setActionCooldown(std::string action, float duration);
-    void setPosition(sf::Vector2f pos);
+    void setPos(sf::Vector2f &pos);
+    void setGridPos(sf::Vector2i &pos);
 
     bool isDisguised() const;
     bool isHidden() const;
@@ -46,8 +49,8 @@ public:
     bool checkCollision(const sf::FloatRect &otherBounds) const;
 
     sf::FloatRect getBounds() const;
-    sf::Vector2f getPosition() const;
-    sf::Vector2i getGridPosition(float tileSize) const;
+    sf::Vector2f getPos() const;
+    sf::Vector2i getGridPosition() const;
 
     void disguise();
     void hide();

@@ -16,7 +16,7 @@ Guard::Guard()
 }
 Guard::Guard(const sf::Vector2f &startPos) : Guard()
 {
-    setPosition(startPos);
+    setPos(startPos);
 }
 bool Guard::checkCollision(const sf::FloatRect &otherBounds) const
 {
@@ -525,8 +525,8 @@ void Guard::draw(sf::RenderWindow &window)
 
     // Calculate which tile the guard is on
     sf::Vector2f guardPos = circle.getPosition();
-    int tileX = static_cast<int>(guardPos.x) / tileSize;
-    int tileY = static_cast<int>(guardPos.y) / tileSize;
+    int tileX = static_cast<int>(guardPos.x) / 40.f;
+    int tileY = static_cast<int>(guardPos.y) / 40.f;
 
     highlight.setPosition(sf::Vector2f(tileX * tileSize, tileY * tileSize));
 
@@ -535,17 +535,19 @@ void Guard::draw(sf::RenderWindow &window)
     window.draw(lastSeenMarker);
 }
 
-void Guard::setPosition(const sf::Vector2f &position)
+void Guard::setPos(const sf::Vector2f &position)
 {
     circle.setPosition(position);
     initialPosition = position;
 }
-sf::Vector2i Guard::getGridPosition(float tileSize) const
+void Guard::setGridPos(const sf::Vector2i &position)
 {
-    sf::Vector2f worldPos = circle.getPosition();
-    return sf::Vector2i(
-        static_cast<int>(worldPos.x / tileSize),
-        static_cast<int>(worldPos.y / tileSize));
+    gridPosition = position;
+}
+
+sf::Vector2i Guard::getGridPosition() const
+{
+    return gridPosition;
 }
 
 void Guard::setVelocity(const sf::Vector2f &dir)
@@ -553,7 +555,15 @@ void Guard::setVelocity(const sf::Vector2f &dir)
     velocity = dir;
     if (velocity != sf::Vector2f({0.f, 0.f}))
     {
-        facingDir = velocity / std::hypot(velocity.x, velocity.y);
+        if (std::hypot(velocity.x, velocity.y) > 0)
+        {
+
+            facingDir = velocity / std::hypot(velocity.x, velocity.y);
+        }
+        else
+        {
+            std::cerr << "[Error] Guard velocity is zero!" << std::endl;
+        }
     }
 }
 void Guard::setPatrolPath(const std::vector<sf::Vector2f> &path)

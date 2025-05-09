@@ -5,9 +5,9 @@ void InteractionManager::handle(Player &player, std::vector<GameObject> &objects
 {
     for (auto &obj : objects)
     {
-        float dx = player.getPosition().x - obj.getPosition().x;
-        float dy = player.getPosition().y - obj.getPosition().y;
-        float dist = std::sqrt(dx * dx + dy * dy);
+        float dx = player.getPos().x - obj.getPos().x;
+        float dy = player.getPos().y - obj.getPos().y;
+        float dist = (dx == 0.f && dy == 0.f) ? 0.f : std::sqrt(dx * dx + dy * dy);
 
         if ((player.getBounds().findIntersection(obj.getBounds()).has_value() || dist < 30.f ) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E))
         {

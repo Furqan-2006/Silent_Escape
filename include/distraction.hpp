@@ -12,6 +12,6 @@ public:
     Distraction(const sf::Vector2f &pos, float radius = 10.f, float dur = 3.f);
     bool isExpired() const;
     void draw(sf::RenderWindow &win);
-    sf::Vector2f getPosition() const;
+    sf::Vector2f getPos() const;
     float getRadius() const;
 };

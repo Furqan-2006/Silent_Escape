@@ -26,26 +26,28 @@ Level::Level(const std::string &mapPath, float tileSize, sf::RenderWindow &win)
     meta = loadMetadata(metaPath, tileSize);
 
     // Initialize player
-    player.setPosition(meta.playerPos);
+    player.setPos(meta.playerPos);
+    player.setGridPos(meta.playerGridPos);
 
     // Initialize guards from metadata
     for (const auto &g : meta.guards)
     {
-        addGuard(g.position, g.direction, g.patrolPath);
+        addGuard(g.position,g.gridPos, g.direction, g.patrolPath);
     }
 
     std::cout << "Level loaded\n";
+    std::cout << "[Level] Constructed with tileSize: " << tileSize << std::endl;
 }
 
 void Level::reset()
 {
     // Reset player position
-    player.setPosition(meta.playerPos);
+    player.setPos(meta.playerPos);
 
     // Reset each guard
     for (std::size_t i = 0; i < meta.guards.size() && i < guards.size(); ++i)
     {
-        guards[i].setPosition(meta.guards[i].position);
+        guards[i].setPos(meta.guards[i].position);
         guards[i].resetState();
     }
     mapView.setCenter(meta.playerPos);
@@ -63,10 +65,11 @@ void Level::handleInput(const sf::Event::KeyPressed &key)
     }
 }
 
-void Level::addGuard(const sf::Vector2f &position, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath)
+void Level::addGuard(const sf::Vector2f &position, const sf::Vector2i &gridPosition, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath)
 {
     Guard guard;
-    guard.setPosition(position);
+    guard.setPos(position);
+    guard.setGridPos(gridPosition);
     guard.setVelocity(direction);
     guard.setPatrolPath(patrolPath);
     guards.push_back(guard);
@@ -80,11 +83,17 @@ void updateCamera(sf::View &view, const sf::Vector2f &playerPos, float mapWidth,
 
     float clampedX = (mapWidth > viewSize.x)
                          ? std::clamp(playerPos.x, halfWidth, mapWidth - halfWidth)
-                         : mapWidth / 2.f;
+                         : (mapWidth != 0 ? mapWidth / 2.f : 0.f);
 
     float clampedY = (mapHeight > viewSize.y)
                          ? std::clamp(playerPos.y, halfHeight, mapHeight - halfHeight)
-                         : mapHeight / 2.f;
+                         : (mapHeight != 0 ? mapHeight / 2.f : 0.f);
+
+    if (mapWidth == 0 || mapHeight == 0)
+    {
+        std::cerr << "[Error] Division by zero detected in map dimensions.\n";
+        return;
+    }
 
     sf::Vector2f desiredCenter(clampedX, clampedY);
     sf::Vector2f currentCenter = view.getCenter();
@@ -101,7 +110,7 @@ void Level::update(GameState &gameState, float &deltaTime, sf::Clock &gameOverCl
     {
         return;
     }
-    updateCamera(mapView, player.getPosition(), getMapSize().x, getMapSize().y, deltaTime);
+    updateCamera(mapView, player.getPos(), getMapSize().x, getMapSize().y, deltaTime);
 
     // Handle player movement
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
@@ -116,7 +125,7 @@ void Level::update(GameState &gameState, float &deltaTime, sf::Clock &gameOverCl
     // Update all guards
     for (auto &guard : guards)
     {
-        guard.update(player, player.getPosition(), obstacles, gameState, *pathfinder, window, tileSize, deltaTime, gameOverClock);
+        guard.update(player, player.getPos(), obstacles, gameState, *pathfinder, window, tileSize, deltaTime, gameOverClock);
     }
 }
 
@@ -127,20 +136,25 @@ void Level::render(sf::RenderWindow &window)
     // Draw map and entities
     for (auto &ob : obstacles)
     {
-        sf::Vector2f isoPos = toIsometric(ob.getGridPosition(tileSize), tileSize, tileSize / 2.f);
-        ob.setPosition(isoPos);
+        sf::Vector2f isoPos = toIsometric(ob.getGridPosition(), 40.f);
+        ob.setPos(isoPos);
+        std::cout << "[LOG] obstacles ISOPOS: " << isoPos.x << ", " << isoPos.y << std::endl;
+
         ob.draw(window);
     }
     for (auto &guard : guards)
     {
-        sf::Vector2f isoPos = toIsometric(guard.getGridPosition(tileSize), tileSize, tileSize / 2.f);
-        guard.setPosition(isoPos);
+        sf::Vector2f isoPos = toIsometric(guard.getGridPosition(), 40.f);
+        std::cout << "[LOG] GUARD ISOPOS: " << isoPos.x << ", " << isoPos.y << std::endl;
+        guard.setPos(isoPos);
         guard.drawSightCone(window);
         guard.draw(window);
         // guard.drawPath(window);
     }
-    sf::Vector2f isoPos = toIsometric(player.getGridPosition(tileSize), tileSize, tileSize / 2.f);
-    player.setPosition(isoPos);
+    sf::Vector2f isoPos = toIsometric(player.getGridPosition(), 40.f);
+    player.setPos(isoPos);
+    std::cout << "[LOG] player ISOPOS: " << isoPos.x << ", " << isoPos.y << std::endl;
+
     player.draw(window);
     if (isPaused)
     {
@@ -150,7 +164,7 @@ void Level::render(sf::RenderWindow &window)
 
 sf::Vector2f Level::getPlayerPos() const
 {
-    return player.getPosition();
+    return player.getPos();
 }
 
 sf::Vector2f Level::getMapSize() const

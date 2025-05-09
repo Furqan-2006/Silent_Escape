@@ -17,7 +17,7 @@ private:
     sf::RenderWindow &window;
     sf::View mapView;
 
-    float tileSize = 40.;
+    float tileSize = 40.f;
     float stepSize = tileSize;
 
     std::vector<GameObject> obstacles;
@@ -32,7 +32,7 @@ private:
 
     LevelMetadata meta;
 
-    void addGuard(const sf::Vector2f &position, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath);
+    void addGuard(const sf::Vector2f &position, const sf::Vector2i &gridPosition, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath);
 
 public:
     Level(const std::string &mapPath, float tileSize, sf::RenderWindow &win);
