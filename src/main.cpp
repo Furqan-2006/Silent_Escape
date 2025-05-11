@@ -1,6 +1,6 @@
 #include "main.hpp"
 
-sf::RenderWindow window(sf::VideoMode({800, 600}), "Silent Escape");
+sf::RenderWindow window(sf::VideoMode({1280, 720}), "Silent Escape");
 // sf::View view(sf::FloatRect({0, 0}, {800, 600}));
 
 GameState gameState = GameState::MENU;
@@ -8,9 +8,10 @@ Menu menu(window.getSize().x, window.getSize().y);
 LevelMenu levelmenu(window.getSize().x, window.getSize().y);
 
 sf::Clock gameOverClock;
-float tileSize = 40.f;
+float tileSize = 64.f;
 
 LevelManager levelManager(window, tileSize);
+TextureManager textureManager;
 
 void handleMenuInput(const sf::Event::KeyPressed &key, Menu &menu, GameState &gameState, sf::RenderWindow &window)
 {
@@ -47,21 +48,25 @@ void handleLevelMenuInput(const sf::Event::KeyPressed &key, LevelMenu &levelmenu
         switch (levelmenu.getSelectedLevel())
         {
         case 0:
-            levelManager.loadInitialLevel("../assets/maps/level1.txt");
+            levelManager.loadInitialLevel("../assets/maps/level1.txt", textureManager);
             gameState = GameState::LEVEL_1;
             break;
         case 1:
-            levelManager.loadInitialLevel("../assets/maps/level2.txt");
+            levelManager.loadInitialLevel("../assets/maps/level2.txt", textureManager);
             gameState = GameState::LEVEL_2;
             break;
         case 2:
-            levelManager.loadInitialLevel("../assets/maps/level3.txt");
+            levelManager.loadInitialLevel("../assets/maps/level3.txt", textureManager);
             gameState = GameState::LEVEL_3;
             break;
-            // case 3:
-            //     levelManager.loadInitialLevel("../assets/maps/level4.txt");
+        case 3:
+            //     levelManager.loadInitialLevel("../assets/maps/level4.txt", textureManager);
             //     gameState = GameState::LEVEL_3;
             //     break;
+            // case 4:
+            levelManager.loadInitialLevel("../assets/maps/level5.txt", textureManager);
+            gameState = GameState::LEVEL_3;
+            break;
         }
     }
     else if (key.scancode == sf::Keyboard::Scancode::Escape)
@@ -112,6 +117,10 @@ int main()
     levelText.setString("Game Over!!");
     levelText.setPosition({100, 250});
     // GameoverText:end
+
+    // Load Textures
+    textureManager.load("wall-LR", "../assets/textures/Sprites/wall/Sprite-0002.png");
+    textureManager.load("wall-TB", "../assets/textures/Sprites/wall/Sprite-0003.png");
 
     while (window.isOpen())
     {

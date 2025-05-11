@@ -1,6 +1,7 @@
 #include "levelmanager.hpp"
 
-LevelManager::LevelManager(sf::RenderWindow &window, float tileSize) : nextReady(false), stopThread(false), window(window), tileSize(tileSize) {}
+LevelManager::LevelManager(sf::RenderWindow &window, float tileSize)
+    : nextReady(false), stopThread(false), window(window), tileSize(tileSize) {}
 
 LevelManager::~LevelManager()
 {
@@ -11,11 +12,12 @@ LevelManager::~LevelManager()
     }
 }
 
-void LevelManager::loadInitialLevel(const std::string &filename)
+void LevelManager::loadInitialLevel(const std::string &filename, TextureManager &textureManager)
 {
-    currentLevel = std::make_shared<Level>(filename, tileSize, window);
+    currentLevel = std::make_shared<Level>(filename, textureManager, tileSize, window);
 }
-void LevelManager::preloadNextLevel(const std::string &filename)
+
+void LevelManager::preloadNextLevel(const std::string &filename, TextureManager &textureManager)
 {
     nextReady = false;
 
@@ -23,24 +25,29 @@ void LevelManager::preloadNextLevel(const std::string &filename)
     {
         preloadThread.join();
     }
-    preloadThread = std::thread([this, filename]()
-                                {
-    if (stopThread){return;}
 
-    nextLevel = std::make_shared<Level>(filename, tileSize, window); 
-    nextReady = true; });
+    preloadThread = std::thread([this, filename, &textureManager]()
+                                {
+        if (stopThread.load()) return;
+
+        auto loadedLevel = std::make_shared<Level>(filename, textureManager, tileSize, window);
+        if (!stopThread.load())
+        {
+            nextLevel = loadedLevel;
+            nextReady = true;
+        } });
 }
 
 bool LevelManager::isNextReady() const
 {
-    return nextReady;
+    return nextReady.load();
 }
+
 void LevelManager::switchToNextLevel()
 {
-    if (!nextReady)
-    {
+    if (!nextReady.load())
         return;
-    }
+
     currentLevel = nextLevel;
     nextLevel.reset();
     nextReady = false;
@@ -75,19 +82,17 @@ LevelManager &LevelManager::operator=(LevelManager &&other) noexcept
         {
             preloadThread.join();
         }
+
         currentLevel = std::move(other.currentLevel);
         nextLevel = std::move(other.nextLevel);
         nextReady = other.nextReady.load();
         stopThread = false;
 
-        if (other.preloadThread.joinable())
-        {
-            other.preloadThread.join();
-        }
         preloadThread = std::move(other.preloadThread);
     }
     return *this;
 }
+
 void LevelManager::reset()
 {
     stopThread = true;

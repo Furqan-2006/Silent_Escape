@@ -20,6 +20,7 @@
         "${workspaceFolder}/src/levelMenu.cpp",
         "${workspaceFolder}/src/levelmanager.cpp",
         "${workspaceFolder}/src/distraction.cpp",
+        "${workspaceFolder}/src/textureManager.cpp",
         "-o",
         "${workspaceFolder}/build/silent_escape",
         "-I",

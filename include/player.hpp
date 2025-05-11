@@ -7,6 +7,7 @@
 #include "pathfinder.hpp"
 #include <unordered_map>
 #include "distraction.hpp"
+#include "utils.hpp"
 
 class Player
 {
@@ -28,10 +29,10 @@ public:
     Player(float sp = 1.f);
 
     bool canMove(sf::Vector2f offset, const std::vector<GameObject> &obstacles);
-    void moveUp(const std::vector<GameObject> &obstacles);
-    void moveDown(const std::vector<GameObject> &obstacles);
-    void moveRight(const std::vector<GameObject> &obstacles);
-    void moveLeft(const std::vector<GameObject> &obstacles);
+    void moveUp(float deltaTime, const std::vector<GameObject> &obstacles);
+    void moveDown(float deltaTime, const std::vector<GameObject> &obstacles);
+    void moveRight(float deltaTime, const std::vector<GameObject> &obstacles);
+    void moveLeft(float deltaTime, const std::vector<GameObject> &obstacles);
 
     void draw(sf::RenderWindow &window);
     void update();
@@ -59,4 +60,6 @@ public:
     void cleanupDistractions();
 
     const std::vector<Distraction> &getDistractions() const;
+
+    void drawTileHighlight(sf::RenderWindow &window, int tileWidth, int tileHeight);
 };

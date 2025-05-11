@@ -49,7 +49,7 @@ private:
     const float alertDuration = 0.5f;
     const float searchDuration = 5.f;
     float viewDistance = 100.f;
-    float moveSpeed = 60.0f;
+    float moveSpeed = 50.0f;
     float pauseDurationAtTarget = 1.f;
     float pathTimer = 0.f;
     float repathInterval = 0.5f;

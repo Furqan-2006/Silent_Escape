@@ -10,6 +10,7 @@
 #include "gameStateEnum.hpp"
 #include "interactionManager.hpp"
 #include "metaDataLoader.hpp"
+#include "textureManager.hpp"
 
 class Level
 {
@@ -19,6 +20,9 @@ private:
 
     float tileSize = 40.f;
     float stepSize = tileSize;
+
+    sf::Texture FloorTexture;
+    std::vector<sf::Sprite> floorSprites;
 
     std::vector<GameObject> obstacles;
     std::vector<Guard> guards;
@@ -35,7 +39,7 @@ private:
     void addGuard(const sf::Vector2f &position, const sf::Vector2i &gridPosition, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath);
 
 public:
-    Level(const std::string &mapPath, float tileSize, sf::RenderWindow &win);
+    Level(const std::string &mapPath, TextureManager &textureManager, float tileSize, sf::RenderWindow &win);
 
     void handleInput(const sf::Event::KeyPressed &key);
     void update(GameState &gameState, float &deltaTime, sf::Clock &gameOverClock);

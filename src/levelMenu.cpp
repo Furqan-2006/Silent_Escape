@@ -64,6 +64,8 @@ LevelMenu::LevelMenu(float width, float height)
     tiles[0].unlock();
     tiles[1].unlock();
     tiles[2].unlock();
+    tiles[3].unlock();
+    tiles[4].unlock();
     tiles[0].select();
 }
 

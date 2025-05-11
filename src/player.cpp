@@ -26,7 +26,9 @@ bool Player::canMove(sf::Vector2f offset, const std::vector<GameObject> &obstacl
     rect.move(offset);
     for (const auto &obs : obstacles)
     {
-        if (checkCollision(obs.getBounds()))
+        if (checkCollision(obs.getCollisionBox()))
+
+        // if (checkCollision(obs.getBounds()))
         {
             rect.move(-offset);
             return false;
@@ -35,10 +37,12 @@ bool Player::canMove(sf::Vector2f offset, const std::vector<GameObject> &obstacl
     return true;
 }
 
-void Player::moveUp(const std::vector<GameObject> &obstacles)
+void Player::moveUp(float deltaTime, const std::vector<GameObject> &obstacles)
 {
-    if (canMove({0.f, -speed}, obstacles))
+    sf::Vector2f dir = toIsometricDir({0.f, -1.f}, 64.f);
+    if (canMove(dir * speed * deltaTime, obstacles))
     {
+
         std::cout << "[LOG] player moved up" << std::endl;
     }
     else
@@ -46,10 +50,12 @@ void Player::moveUp(const std::vector<GameObject> &obstacles)
         std::cout << "[LOG] Collision on up\n";
     }
 }
-void Player::moveDown(const std::vector<GameObject> &obstacles)
+void Player::moveDown(float deltaTime, const std::vector<GameObject> &obstacles)
 {
-    if (canMove({0.f, speed}, obstacles))
+    sf::Vector2f dir = toIsometricDir({0.f, 1.f}, 64.f);
+    if (canMove(dir * speed * deltaTime, obstacles))
     {
+
         std::cout << "[LOG] player moved down" << std::endl;
     }
     else
@@ -57,10 +63,12 @@ void Player::moveDown(const std::vector<GameObject> &obstacles)
         std::cout << "[LOG] Collision on down\n";
     }
 }
-void Player::moveLeft(const std::vector<GameObject> &obstacles)
+void Player::moveLeft(float deltaTime, const std::vector<GameObject> &obstacles)
 {
-    if (canMove({-speed, 0.f}, obstacles))
+    sf::Vector2f dir = toIsometricDir({-1.f, 0.f}, 64.f);
+    if (canMove(dir * speed * deltaTime, obstacles))
     {
+
         std::cout << "[LOG] player moved left" << std::endl;
     }
     else
@@ -68,9 +76,10 @@ void Player::moveLeft(const std::vector<GameObject> &obstacles)
         std::cout << "[LOG] Collision on left\n";
     }
 }
-void Player::moveRight(const std::vector<GameObject> &obstacles)
+void Player::moveRight(float deltaTime, const std::vector<GameObject> &obstacles)
 {
-    if (canMove({speed, 0.f}, obstacles))
+    sf::Vector2f dir = toIsometricDir({1.f, 0.f}, 64.f);
+    if (canMove(dir * speed * deltaTime, obstacles))
     {
         std::cout << "[LOG] player moved right" << std::endl;
     }
@@ -213,4 +222,29 @@ sf::Vector2i Player::getGridPosition() const
 sf::FloatRect Player::getBounds() const
 {
     return rect.getGlobalBounds();
+}
+
+void Player::drawTileHighlight(sf::RenderWindow &window, int tileWidth, int tileHeight)
+{
+    // Get player position
+    sf::Vector2f pos = rect.getPosition();
+
+    // Convert isometric screen position to grid position
+    int tileX = static_cast<int>((pos.x / (tileWidth / 2) + pos.y / (tileHeight / 2)) / 2);
+    int tileY = static_cast<int>((pos.y / (tileHeight / 2) - pos.x / (tileWidth / 2)) / 2);
+
+    // Convert grid position back to isometric screen coordinates
+    float screenX = (tileX - tileY) * (tileWidth / 2.f);
+    float screenY = (tileX + tileY) * (tileHeight / 2.f);
+
+    // Draw a semi-transparent rectangle or diamond
+    sf::ConvexShape diamond;
+    diamond.setPointCount(4);
+    diamond.setPoint(0, sf::Vector2f(screenX, screenY + tileHeight / 2.f));             // left
+    diamond.setPoint(1, sf::Vector2f(screenX + tileWidth / 2.f, screenY));              // top
+    diamond.setPoint(2, sf::Vector2f(screenX + tileWidth, screenY + tileHeight / 2.f)); // right
+    diamond.setPoint(3, sf::Vector2f(screenX + tileWidth / 2.f, screenY + tileHeight)); // bottom
+
+    diamond.setFillColor(sf::Color(255, 255, 0, 100)); // Yellow with transparency
+    window.draw(diamond);
 }

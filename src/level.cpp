@@ -6,18 +6,43 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <cmath>
 
-Level::Level(const std::string &mapPath, float tileSize, sf::RenderWindow &win)
-    : tileSize(tileSize), player(1.5f), window(win)
+Level::Level(const std::string &mapPath, TextureManager &textureManager, float tileSize, sf::RenderWindow &win)
+    : tileSize(tileSize), player(50.f), window(win)
 {
-    mapView.setSize({800, 600});
+    if (!FloorTexture.loadFromFile("../assets/textures/Sprites/floor/floor-3.png"))
+    {
+        std::cerr << "[ERROR] Cannot load floor textures" << std::endl;
+        return;
+    }
+
+    mapView.setSize({1366, 720});
     // Load tilemap and obstacles
-    obstacles = loadMap(mapPath, tileSize);
+    obstacles = loadMap(mapPath, textureManager, tileSize);
 
     // Load pathfinding grid
     auto gridData = loadGridMap(mapPath);
     pathfinder = std::make_unique<PathFinder>(stepSize, gridData.size(), gridData[0].size(), gridData, tileSize);
 
+    int cols = gridData.size();
+    int rows = gridData[0].size(); // assuming at least 1 row exists
+
+    for (int y = 1; y < rows; y++)
+    {
+        for (int x = 1; x < cols; x++)
+        {
+            sf::Sprite floor(FloorTexture);
+            // std::cout << "[LOG] FLoor sprite created" << std::endl;
+
+            floor.setOrigin({FloorTexture.getSize().x / 2.f, FloorTexture.getSize().y - tileSize / 2.f});
+
+            sf::Vector2f isoPos = toIsometric({x, y}, tileSize);
+            // isoPos += {100, 388};
+            floor.setPosition({std::round(isoPos.x), std::round(isoPos.y)});
+            floorSprites.push_back(floor);
+        }
+    }
     mapHeight = gridData.size();
     mapWidth = gridData[0].size();
 
@@ -28,11 +53,13 @@ Level::Level(const std::string &mapPath, float tileSize, sf::RenderWindow &win)
     // Initialize player
     player.setPos(meta.playerPos);
     player.setGridPos(meta.playerGridPos);
+    sf::Vector2f isoPos = toIsometric(player.getGridPosition(), 64.f);
+    player.setPos(isoPos);
 
     // Initialize guards from metadata
     for (const auto &g : meta.guards)
     {
-        addGuard(g.position,g.gridPos, g.direction, g.patrolPath);
+        addGuard(g.position, g.gridPos, g.direction, g.patrolPath);
     }
 
     std::cout << "Level loaded\n";
@@ -69,9 +96,13 @@ void Level::addGuard(const sf::Vector2f &position, const sf::Vector2i &gridPosit
 {
     Guard guard;
     guard.setPos(position);
+    sf::Vector2f isoPos = toIsometric(gridPosition, 64.f);
+    isoPos += {64.f, 64.f};
+    guard.setPos(isoPos);
     guard.setGridPos(gridPosition);
     guard.setVelocity(direction);
     guard.setPatrolPath(patrolPath);
+
     guards.push_back(guard);
 }
 
@@ -114,13 +145,21 @@ void Level::update(GameState &gameState, float &deltaTime, sf::Clock &gameOverCl
 
     // Handle player movement
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
-        player.moveUp(obstacles);
+        player.moveUp(deltaTime, obstacles);
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
-        player.moveLeft(obstacles);
+        player.moveLeft(deltaTime, obstacles);
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
-        player.moveDown(obstacles);
+        player.moveDown(deltaTime, obstacles);
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
-        player.moveRight(obstacles);
+        player.moveRight(deltaTime, obstacles);
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
+        player.moveUp(deltaTime * 10.f, obstacles);
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
+        player.moveLeft(deltaTime * 10.f, obstacles);
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
+        player.moveDown(deltaTime * 10.f, obstacles);
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
+        player.moveRight(deltaTime * 10.f, obstacles);
 
     // Update all guards
     for (auto &guard : guards)
@@ -133,29 +172,25 @@ void Level::render(sf::RenderWindow &window)
 {
     window.setView(mapView);
 
+    // draw floor
+    for (const auto &tile : floorSprites)
+        window.draw(tile);
+
     // Draw map and entities
     for (auto &ob : obstacles)
     {
-        sf::Vector2f isoPos = toIsometric(ob.getGridPosition(), 40.f);
-        ob.setPos(isoPos);
-        std::cout << "[LOG] obstacles ISOPOS: " << isoPos.x << ", " << isoPos.y << std::endl;
-
         ob.draw(window);
     }
     for (auto &guard : guards)
     {
-        sf::Vector2f isoPos = toIsometric(guard.getGridPosition(), 40.f);
-        std::cout << "[LOG] GUARD ISOPOS: " << isoPos.x << ", " << isoPos.y << std::endl;
-        guard.setPos(isoPos);
         guard.drawSightCone(window);
         guard.draw(window);
         // guard.drawPath(window);
     }
-    sf::Vector2f isoPos = toIsometric(player.getGridPosition(), 40.f);
-    player.setPos(isoPos);
-    std::cout << "[LOG] player ISOPOS: " << isoPos.x << ", " << isoPos.y << std::endl;
 
     player.draw(window);
+    player.drawTileHighlight(window, 64, 32); // assuming 64x32 tile size
+
     if (isPaused)
     {
         drawPauseOverlay(window);

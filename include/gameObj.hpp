@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include "utils.hpp"
+#include <memory>
 
 enum class ObjectType
 {
@@ -16,12 +18,14 @@ enum class ObjectType
 class GameObject
 {
 private:
-    sf::CircleShape shape;
+    std::unique_ptr<sf::Sprite> sprite;
+
     ObjectType type;
     sf::Vector2i gridPos;
+    sf::FloatRect collisionBox;
 
 public:
-    GameObject(float rad, int points, sf::Vector2f pos, sf::Color color, ObjectType t, sf::Vector2i gridpos);
+    GameObject(const sf::Texture &tex, sf::Vector2f pos, ObjectType t, sf::Vector2i gridpos, float tileSize);
 
     virtual void draw(sf::RenderWindow &window);
 
@@ -29,8 +33,7 @@ public:
     ObjectType getType() const;
     sf::Vector2f getPos() const;
     sf::Vector2i getGridPosition() const;
+    sf::FloatRect getCollisionBox() const;
 
-    void setGridPosition(sf::Vector2f worldPos, float tileSize);
     void setPos(sf::Vector2f &pos);
-    void setFillColor(sf::Color color);
 };

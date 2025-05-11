@@ -1,20 +1,37 @@
 #include "gameObj.hpp"
 
-GameObject::GameObject(float rad, int points, sf::Vector2f pos, sf::Color color, ObjectType t, sf::Vector2i gridP) : type(t), gridPos(gridP)
+GameObject::GameObject(const sf::Texture &tex, sf::Vector2f pos, ObjectType t, sf::Vector2i gridP, float tileSize)
+    : type(t), gridPos(gridP), sprite(std::make_unique<sf::Sprite>(tex)) // Initialize members
 {
-    shape.setPointCount(points);
-    shape.setRadius(rad);
-    shape.setFillColor(color);
-    shape.setPosition(pos);
+    // Set sprite texture
+    // sprite->setTexture(tex);
+
+    // Set sprite origin (e.g., bottom-center for isometric)
+    sprite->setOrigin({tex.getSize().x / 2.f, (float)tex.getSize().y});
+
+    sf::Vector2f isoPos = toIsometric(gridP, tileSize);
+    isoPos += {32.f, 32.f};
+    sprite->setPosition(isoPos);
+
+    float offsetX = 10.f;
+    float offsetY = 40.f;
+    float width = 44.f;
+    float height = 24.f;
+
+    collisionBox = sf::FloatRect(
+        {isoPos.x - sprite->getOrigin().x + offsetX, isoPos.y - sprite->getOrigin().y + offsetY},
+        {width, height});
 }
+
 void GameObject::draw(sf::RenderWindow &window)
 {
-    window.draw(shape);
+    window.draw(*sprite);
+    // std::cout<<"drawn\n";
 }
 
 sf::FloatRect GameObject::getBounds() const
 {
-    return shape.getGlobalBounds();
+    return sprite->getGlobalBounds();
 }
 ObjectType GameObject::getType() const
 {
@@ -23,7 +40,7 @@ ObjectType GameObject::getType() const
 
 sf::Vector2f GameObject::getPos() const
 {
-    return shape.getPosition();
+    return sprite->getPosition();
 }
 
 sf::Vector2i GameObject::getGridPosition() const
@@ -33,9 +50,9 @@ sf::Vector2i GameObject::getGridPosition() const
 
 void GameObject::setPos(sf::Vector2f &pos)
 {
-    shape.setPosition(pos);
+    sprite->setPosition(pos);
 }
-void GameObject::setFillColor(sf::Color color)
+sf::FloatRect GameObject::getCollisionBox() const
 {
-    shape.setFillColor(color);
+    return collisionBox;
 }

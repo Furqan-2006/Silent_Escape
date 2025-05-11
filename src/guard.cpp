@@ -91,7 +91,7 @@ void Guard::chase(const sf::Vector2f &playerPos, const std::vector<GameObject> &
     float distanceToPlayer = std::hypot(playerPos.x - circle.getPosition().x, playerPos.y - circle.getPosition().y);
     pathTimer += deltaTime;
 
-    if (distanceToPlayer < 40.f)
+    if (distanceToPlayer < 64.f)
     {
         sf::Vector2f dir = playerPos - circle.getPosition();
         float length = std::hypot(dir.x, dir.y);
@@ -525,8 +525,8 @@ void Guard::draw(sf::RenderWindow &window)
 
     // Calculate which tile the guard is on
     sf::Vector2f guardPos = circle.getPosition();
-    int tileX = static_cast<int>(guardPos.x) / 40.f;
-    int tileY = static_cast<int>(guardPos.y) / 40.f;
+    int tileX = static_cast<int>(guardPos.x) / 64.f;
+    int tileY = static_cast<int>(guardPos.y) / 64.f;
 
     highlight.setPosition(sf::Vector2f(tileX * tileSize, tileY * tileSize));
 

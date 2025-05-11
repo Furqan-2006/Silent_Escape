@@ -4,7 +4,7 @@
 #include <vector>
 #include <SFML/Graphics.hpp>
 
-#define NO_OF_LEVELS 3
+#define NO_OF_LEVELS 5
 
 class LevelTile
 {

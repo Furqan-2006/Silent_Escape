@@ -3,7 +3,7 @@
 #include <sstream>
 #include <SFML/Graphics.hpp>
 
-std::vector<GameObject> loadMap(const std::string &fileName, float tileSize)
+std::vector<GameObject> loadMap(const std::string &fileName, TextureManager &textureManager, float tileSize)
 {
     std::vector<GameObject> objects;
     std::ifstream file(fileName);
@@ -26,21 +26,24 @@ std::vector<GameObject> loadMap(const std::string &fileName, float tileSize)
 
             switch (tile)
             {
+            case 9: // Wall
+                objects.emplace_back(textureManager.get("wall-LR"), pos, ObjectType::Wall, sf::Vector2i({row, col}), tileSize);
+                break;
             case 1: // Wall
-                objects.emplace_back(radius, points, pos, sf::Color::Blue, ObjectType::Wall, sf::Vector2i({row, col}));
+                objects.emplace_back(textureManager.get("wall-TB"), pos, ObjectType::Wall, sf::Vector2i({row, col}), tileSize);
                 break;
-            case 2: // Box
-                objects.emplace_back(radius, 4, pos, sf::Color::Yellow, ObjectType::Box, sf::Vector2i({row, col}));
-                break;
-            case 3: // Door
-                objects.emplace_back(radius, 8, pos, sf::Color(165, 42, 42), ObjectType::Door, sf::Vector2i({row, col}));
-                break;
-            case 4: // Disguise
-                objects.emplace_back(5.f, 40, pos, sf::Color(128, 0, 128), ObjectType::Disguise, sf::Vector2i({row, col}));
-                break;
-            case 5: // Terminal
-                objects.emplace_back(10.f, 3, pos, sf::Color(128, 128, 128), ObjectType::Terminal, sf::Vector2i({row, col}));
-                break;
+                // case 2: // Box
+                //     objects.emplace_back(textureManager.get("box"), pos, ObjectType::Box, sf::Vector2i({row, col}), tileSize);
+                //     break;
+                // case 3: // Door
+                //     objects.emplace_back(textureManager.get("door"), pos, ObjectType::Door, sf::Vector2i({row, col}), tileSize);
+                //     break;
+                // case 4: // Disguise
+                //     objects.emplace_back(textureManager.get("disguise"), pos, ObjectType::Disguise, sf::Vector2i({row, col}), tileSize);
+                //     break;
+                // case 5: // Terminal
+                //     objects.emplace_back(textureManager.get("terminal"), pos, ObjectType::Terminal, sf::Vector2i({row, col}), tileSize);
+                // break;
             }
             col++;
         }

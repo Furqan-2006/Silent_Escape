@@ -12,6 +12,7 @@
 #include "pathfinder.hpp"
 #include "levelmenu.hpp"
 #include "levelmanager.hpp"
+#include "textureManager.hpp"
 
 void handleMenuInput(const sf::Event::KeyPressed &, Menu &, GameState &, sf::RenderWindow &);
 void handleLevelMenuInput(const sf::Event::KeyPressed &, LevelMenu &, GameState &, sf::RenderWindow &);

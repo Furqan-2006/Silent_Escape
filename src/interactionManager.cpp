@@ -15,7 +15,7 @@ void InteractionManager::handle(Player &player, std::vector<GameObject> &objects
             {
             case ObjectType::Door:
                 player.hack();
-                obj.setFillColor(sf::Color::Green);
+                // obj.setFillColor(sf::Color::Green);
                 std::cout << "[LOG] Player is interacting with a door\n";
                 return;
             case ObjectType::Box:
@@ -24,7 +24,7 @@ void InteractionManager::handle(Player &player, std::vector<GameObject> &objects
                 return;
             case ObjectType::Disguise:
                 player.disguise();
-                obj.setFillColor(sf::Color::Green);
+                // obj.setFillColor(sf::Color::Green);
                 std::cout << "[LOG] Player is disguising \n";
                 return;
             case ObjectType::Terminal:
