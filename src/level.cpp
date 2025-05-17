@@ -9,7 +9,7 @@
 #include <cmath>
 
 Level::Level(const std::string &mapPath, TextureManager &textureManager, float tileSize, sf::RenderWindow &win)
-    : tileSize(tileSize), player(50.f), window(win)
+    : tileSize(tileSize), player(textureManager.get("player-L"), 2.f), window(win)
 {
     if (!FloorTexture.loadFromFile("../assets/textures/Sprites/floor/floor-3.png"))
     {
@@ -59,8 +59,9 @@ Level::Level(const std::string &mapPath, TextureManager &textureManager, float t
     // Initialize guards from metadata
     for (const auto &g : meta.guards)
     {
-        addGuard(g.position, g.gridPos, g.direction, g.patrolPath);
+        addGuard(g.position, g.gridPos, g.direction, g.patrolPath, textureManager.get("guard"));
     }
+    sf::Vector2i Goal = meta.goalPos;
 
     std::cout << "Level loaded\n";
     std::cout << "[Level] Constructed with tileSize: " << tileSize << std::endl;
@@ -75,6 +76,7 @@ void Level::reset()
     for (std::size_t i = 0; i < meta.guards.size() && i < guards.size(); ++i)
     {
         guards[i].setPos(meta.guards[i].position);
+
         guards[i].resetState();
     }
     mapView.setCenter(meta.playerPos);
@@ -92,18 +94,33 @@ void Level::handleInput(const sf::Event::KeyPressed &key)
     }
 }
 
-void Level::addGuard(const sf::Vector2f &position, const sf::Vector2i &gridPosition, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath)
+void Level::addGuard(const sf::Vector2f &position, const sf::Vector2i &gridPosition, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPathGrid, const sf::Texture &tex)
 {
-    Guard guard;
-    guard.setPos(position);
-    sf::Vector2f isoPos = toIsometric(gridPosition, 64.f);
-    isoPos += {64.f, 64.f};
-    guard.setPos(isoPos);
-    guard.setGridPos(gridPosition);
-    guard.setVelocity(direction);
-    guard.setPatrolPath(patrolPath);
+    Guard guard(tex);
 
-    guards.push_back(guard);
+    // Convert guard start position grid coords to isometric screen position
+    sf::Vector2f isoPos = toIsometric(gridPosition, tileSize);
+    isoPos += sf::Vector2f(tileSize * 0.5, tileSize * 0.5);
+    guard.setPos(isoPos);
+
+    guard.setVelocity(direction);
+
+    // // Convert patrolPath points from grid to isometric positions
+    // std::vector<sf::Vector2f> patrolPathIso;
+    // patrolPathIso.reserve(patrolPathGrid.size());
+    // for (const auto &pt : patrolPathGrid)
+    // {
+    //     // Assuming pt is grid position in float form (e.g., (3.f, 5.f))
+    //     sf::Vector2i gridPt(static_cast<int>(pt.x), static_cast<int>(pt.y));
+    //     sf::Vector2f isoPt = toIsometric(gridPt, tileSize);
+    //     // Optional offset to center on tile if needed:
+    //     isoPt += sf::Vector2f(tileSize, tileSize);
+    //     patrolPathIso.push_back(isoPt);
+    // }
+
+    guard.setPatrolPath(patrolPathGrid);
+
+    guards.push_back(std::move(guard));
 }
 
 void updateCamera(sf::View &view, const sf::Vector2f &playerPos, float mapWidth, float mapHeight, float deltaTime)
@@ -160,6 +177,8 @@ void Level::update(GameState &gameState, float &deltaTime, sf::Clock &gameOverCl
         player.moveDown(deltaTime * 10.f, obstacles);
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift))
         player.moveRight(deltaTime * 10.f, obstacles);
+
+    player.update(gameState);
 
     // Update all guards
     for (auto &guard : guards)
@@ -226,7 +245,11 @@ void Level::drawPauseOverlay(sf::RenderWindow &window)
 
     sf::Text pauseText(font, "Game Paused", 28);
     pauseText.setFillColor(sf::Color::Green);
-    pauseText.setOrigin({mapView.getCenter().x, mapView.getCenter().y});
+
+    // Center text correctly:
+    sf::FloatRect bounds = pauseText.getLocalBounds();
+    pauseText.setOrigin(bounds.getCenter());
+    pauseText.setPosition({window.getSize().x / 2.f, window.getSize().y / 2.f});
 
     window.draw(pauseText);
 }

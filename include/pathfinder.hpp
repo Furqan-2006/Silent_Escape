@@ -10,8 +10,8 @@ class PathFinder
 private:
     struct Node;
     struct NodeComparator;
-    struct Vector2fHash;
-    struct Vector2fEq;
+    struct Vector2iHash;
+    struct Vector2iEq;
 
     std::vector<std::vector<bool>> grid;
     const std::vector<std::vector<int>> &mapData; // Const reference to mapData

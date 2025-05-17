@@ -11,11 +11,21 @@
 #define PATHFINDER_LOG(x)
 #endif
 
+sf::Vector2i pixelToGrid(const sf::Vector2f &pos, float tileSize)
+{
+    return sf::Vector2i(static_cast<int>(pos.x / tileSize), static_cast<int>(pos.y / tileSize));
+}
+
+sf::Vector2f gridToPixel(const sf::Vector2i &gridPos, float tileSize)
+{
+    return sf::Vector2f(gridPos.x * tileSize + tileSize / 2.f, gridPos.y * tileSize + tileSize / 2.f);
+}
+
 struct PathFinder::Node
 {
-    sf::Vector2f pos, parentPos;
+    sf::Vector2i pos, parentPos;
     float gCost, hCost;
-    Node(sf::Vector2f position = {}, sf::Vector2f parent = {}, float g = 0.f, float h = 0.f)
+    Node(sf::Vector2i position = {}, sf::Vector2i parent = {}, float g = 0.f, float h = 0.f)
         : pos(position), parentPos(parent), gCost(g), hCost(h) {}
     float fCost() const { return gCost + hCost; }
 };
@@ -28,17 +38,17 @@ struct PathFinder::NodeComparator
     }
 };
 
-struct PathFinder::Vector2fHash
+struct PathFinder::Vector2iHash
 {
-    std::size_t operator()(const sf::Vector2f &v) const noexcept
+    std::size_t operator()(const sf::Vector2i &v) const noexcept
     {
-        return std::hash<int>()(static_cast<int>(v.x)) ^ (std::hash<int>()(static_cast<int>(v.y)) << 1);
+        return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1);
     }
 };
 
-struct PathFinder::Vector2fEq
+struct PathFinder::Vector2iEq
 {
-    bool operator()(const sf::Vector2f &a, const sf::Vector2f &b) const noexcept
+    bool operator()(const sf::Vector2i &a, const sf::Vector2i &b) const noexcept
     {
         return a.x == b.x && a.y == b.y;
     }
@@ -146,61 +156,80 @@ std::vector<sf::Vector2f> PathFinder::smoothPath(const std::vector<sf::Vector2f>
 
 std::vector<sf::Vector2f> PathFinder::findPath(sf::Vector2f start, sf::Vector2f goal)
 {
+    // Convert start and goal from pixel to grid coordinates
+    sf::Vector2i startGrid = pixelToGrid(start, tileSize);
+    sf::Vector2i goalGrid = pixelToGrid(goal, tileSize);
+
     PATHFINDER_LOG("START Pathfinding from (" << start.x << ", " << start.y << ") to (" << goal.x << ", " << goal.y << ")");
 
-    start = roundToTileCenter(start);
-    goal = roundToTileCenter(goal);
+    // Round start and goal to tile centers in pixels (for walkability checks)
+    sf::Vector2f roundedStart = roundToTileCenter(start);
+    sf::Vector2f roundedGoal = roundToTileCenter(goal);
 
-    if (!isWalkable(start))
+    if (!isWalkable(roundedStart))
     {
         PATHFINDER_LOG("ERROR: Start position is not walkable!");
         return {};
     }
 
-    if (!isWalkable(goal))
+    if (!isWalkable(roundedGoal))
     {
-        const std::array<sf::Vector2f, 4> directions = {
+        // Try nearby tiles to adjust goal to walkable tile
+        const std::array<sf::Vector2f, 4> offsets = {
             sf::Vector2f(tileSize, 0),
             sf::Vector2f(-tileSize, 0),
             sf::Vector2f(0, tileSize),
             sf::Vector2f(0, -tileSize)};
-        for (const auto &dir : directions)
+        bool foundWalkable = false;
+        for (const auto &offset : offsets)
         {
-            sf::Vector2f newGoal = goal + dir;
+            sf::Vector2f newGoal = roundedGoal + offset;
             if (isWalkable(newGoal))
             {
-                goal = newGoal;
-                PATHFINDER_LOG("Adjusted goal to walkable point: (" << goal.x << "," << goal.y << ")");
+                roundedGoal = newGoal;
+                goalGrid = pixelToGrid(newGoal, tileSize);
+                PATHFINDER_LOG("Adjusted goal to walkable point: (" << roundedGoal.x << ", " << roundedGoal.y << ")");
+                foundWalkable = true;
                 break;
             }
         }
-        if (!isWalkable(goal))
+        if (!foundWalkable)
         {
             PATHFINDER_LOG("ERROR: Goal position is not walkable!");
             return {};
         }
     }
 
-    if (hypot(goal.x - start.x, goal.y - start.y) < tileSize * 2 && isLineWalkable(start, goal))
+    // If start and goal are close and direct path is walkable, shortcut and return directly
+    if (hypot(roundedGoal.x - roundedStart.x, roundedGoal.y - roundedStart.y) < tileSize * 2 && isLineWalkable(roundedStart, roundedGoal))
     {
         PATHFINDER_LOG("Direct path used for nearby target");
-        return {start, goal};
+        return {roundedStart, roundedGoal};
     }
 
-    std::vector<sf::Vector2f> directions = {
-        {step, 0}, {-step, 0}, {0, step}, {0, -step}, {step, step}, {step, -step}, {-step, step}, {-step, -step}};
+    // Directions to check (grid offsets)
+    std::vector<sf::Vector2i> directions = {
+        {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 
-    std::unordered_map<sf::Vector2f, Node, Vector2fHash, Vector2fEq> nodes;
-    std::unordered_map<sf::Vector2f, float, Vector2fHash, Vector2fEq> openCosts;
+    // Helper lambda: heuristic using Euclidean distance in pixel coords
+    auto heuristic = [&](const sf::Vector2i &a, const sf::Vector2i &b) -> float
+    {
+        sf::Vector2f pa = gridToPixel(a, tileSize);
+        sf::Vector2f pb = gridToPixel(b, tileSize);
+        return hypot(pb.x - pa.x, pb.y - pa.y);
+    };
+
+    std::unordered_map<sf::Vector2i, Node, Vector2iHash, Vector2iEq> nodes;
+    std::unordered_map<sf::Vector2i, float, Vector2iHash, Vector2iEq> openCosts;
+    std::unordered_set<sf::Vector2i, Vector2iHash, Vector2iEq> closedSet;
     std::priority_queue<Node, std::vector<Node>, NodeComparator> openHeap;
-    std::unordered_set<sf::Vector2f, Vector2fHash, Vector2fEq> closedSet;
 
-    nodes[start] = Node(start, start, 0.f, hypot(goal.x - start.x, goal.y - start.y));
-    openHeap.push(nodes[start]);
-    openCosts[start] = nodes[start].fCost();
+    nodes[startGrid] = Node(startGrid, startGrid, 0.f, heuristic(startGrid, goalGrid));
+    openHeap.push(nodes[startGrid]);
+    openCosts[startGrid] = nodes[startGrid].fCost();
 
     int iterations = 0;
-    int maxIterations = 10000;
+    const int maxIterations = 10000;
 
     while (!openHeap.empty() && iterations++ < maxIterations)
     {
@@ -211,14 +240,18 @@ std::vector<sf::Vector2f> PathFinder::findPath(sf::Vector2f start, sf::Vector2f 
         if (closedSet.count(current.pos))
             continue;
 
-        if (current.pos == goal)
+        if (current.pos == goalGrid)
         {
+            // Reconstruct path (in grid coords)
             std::vector<sf::Vector2f> path;
-            for (sf::Vector2f pos = goal; pos != start; pos = nodes[pos].parentPos)
-                path.push_back(pos);
-            path.push_back(start);
+            for (sf::Vector2i pos = goalGrid; pos != startGrid; pos = nodes[pos].parentPos)
+                path.push_back(gridToPixel(pos, tileSize));
+            path.push_back(gridToPixel(startGrid, tileSize));
             std::reverse(path.begin(), path.end());
+
+            // Smooth path in pixel space
             path = smoothPath(path);
+
             PATHFINDER_LOG("COMPLETE. Path length: " << path.size() << ", iterations: " << iterations);
             return path;
         }
@@ -227,8 +260,10 @@ std::vector<sf::Vector2f> PathFinder::findPath(sf::Vector2f start, sf::Vector2f 
 
         for (const auto &dir : directions)
         {
-            sf::Vector2f neighborPos = current.pos + dir;
-            if (!isWalkable(neighborPos) || closedSet.count(neighborPos))
+            sf::Vector2i neighborPos = current.pos + dir;
+            sf::Vector2f neighborPixelPos = gridToPixel(neighborPos, tileSize);
+
+            if (!isWalkable(neighborPixelPos) || closedSet.count(neighborPos))
                 continue;
 
             float moveCost = hypot(dir.x, dir.y);
@@ -237,7 +272,7 @@ std::vector<sf::Vector2f> PathFinder::findPath(sf::Vector2f start, sf::Vector2f 
             auto it = nodes.find(neighborPos);
             if (it == nodes.end())
             {
-                nodes[neighborPos] = Node(neighborPos, current.pos, tentativeG, hypot(goal.x - neighborPos.x, goal.y - neighborPos.y));
+                nodes[neighborPos] = Node(neighborPos, current.pos, tentativeG, heuristic(neighborPos, goalGrid));
                 openHeap.push(nodes[neighborPos]);
                 openCosts[neighborPos] = nodes[neighborPos].fCost();
             }

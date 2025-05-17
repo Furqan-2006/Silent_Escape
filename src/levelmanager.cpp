@@ -26,16 +26,16 @@ void LevelManager::preloadNextLevel(const std::string &filename, TextureManager 
         preloadThread.join();
     }
 
-    preloadThread = std::thread([this, filename, &textureManager]()
+    preloadThread = std::thread([this, filename, textureManagerPtr = &textureManager]()
                                 {
-        if (stopThread.load()) return;
+    if (stopThread.load()) return;
 
-        auto loadedLevel = std::make_shared<Level>(filename, textureManager, tileSize, window);
-        if (!stopThread.load())
-        {
-            nextLevel = loadedLevel;
-            nextReady = true;
-        } });
+    auto loadedLevel = std::make_shared<Level>(filename, *textureManagerPtr, tileSize, window);
+    if (!stopThread.load())
+    {
+        nextLevel = loadedLevel;
+        nextReady = true;
+    } });
 }
 
 bool LevelManager::isNextReady() const

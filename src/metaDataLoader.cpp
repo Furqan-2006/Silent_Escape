@@ -16,6 +16,12 @@ LevelMetadata loadMetadata(const std::string &jsonPath, float tileSize)
     }
     json data;
     file >> data;
+    if (data.contains("goal"))
+    {
+        metadata.goalPos.x = data["goal"]["x"].get<int>();
+        metadata.goalPos.y = data["goal"]["y"].get<int>();
+    }
+
     if (data.contains("player"))
     {
         metadata.playerPos.x = data["player"]["x"].get<float>() * tileSize;
@@ -31,7 +37,7 @@ LevelMetadata loadMetadata(const std::string &jsonPath, float tileSize)
             GuardMetadata guard;
             guard.position.x = g["x"].get<float>() * tileSize;
             guard.position.y = g["y"].get<float>() * tileSize;
-            guard.gridPos.y = g["y"].get<int>();
+            guard.gridPos.x = g["x"].get<int>();
             guard.gridPos.y = g["y"].get<int>();
 
             if (g.contains("dx") && g.contains("dy"))
@@ -46,9 +52,9 @@ LevelMetadata loadMetadata(const std::string &jsonPath, float tileSize)
             {
                 for (const auto &point : g["patrolPath"])
                 {
-                    float px = point["x"].get<float>() * tileSize;
-                    float py = point["y"].get<float>() * tileSize;
-                    guard.addPoint(sf::Vector2f(px, py));
+                    float px = point["x"].get<int>();
+                    float py = point["y"].get<int>();
+                    guard.addPoint(toIsometric(sf::Vector2i(px, py), tileSize));
                 }
             }
             metadata.guards.push_back(guard);

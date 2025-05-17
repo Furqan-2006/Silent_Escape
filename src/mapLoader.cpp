@@ -67,7 +67,7 @@ std::vector<std::vector<int>> loadGridMap(const std::string &fileName)
         {
             // Mark as 1 (non-walkable) for walls, box, door
             // Mark as 0 (walkable) for floor, disguise, terminal, etc.
-            if (tile == 1 || tile == 2 || tile == 3)
+            if (tile == 1 || tile == 9)
                 row.push_back(1);
             else
                 row.push_back(0);

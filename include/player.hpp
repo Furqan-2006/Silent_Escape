@@ -8,11 +8,14 @@
 #include <unordered_map>
 #include "distraction.hpp"
 #include "utils.hpp"
+#include "textureManager.hpp"
+#include "gameStateEnum.hpp"
+#include <cmath>
 
 class Player
 {
 protected:
-    sf::RectangleShape rect;
+    std::unique_ptr<sf::Sprite> sprite;
 
     sf::Vector2i gridPosition;
 
@@ -25,8 +28,10 @@ protected:
 
     float speed;
 
+    sf::Vector2f goalPos;
+
 public:
-    Player(float sp = 1.f);
+    Player(const sf::Texture &tex, float sp = 1.f);
 
     bool canMove(sf::Vector2f offset, const std::vector<GameObject> &obstacles);
     void moveUp(float deltaTime, const std::vector<GameObject> &obstacles);
@@ -35,7 +40,7 @@ public:
     void moveLeft(float deltaTime, const std::vector<GameObject> &obstacles);
 
     void draw(sf::RenderWindow &window);
-    void update();
+    void update(GameState &gameState);
 
     void setDisguised(bool Value);
     void setHidden(bool Value);
@@ -58,6 +63,8 @@ public:
     void hack();
     void distract(); // throw distraction
     void cleanupDistractions();
+
+    bool won();
 
     const std::vector<Distraction> &getDistractions() const;
 

@@ -35,8 +35,9 @@ private:
     bool isPaused = false;
 
     LevelMetadata meta;
+    sf::Vector2i Goal;
 
-    void addGuard(const sf::Vector2f &position, const sf::Vector2i &gridPosition, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath);
+    void addGuard(const sf::Vector2f &position, const sf::Vector2i &gridPosition, const sf::Vector2f &direction, const std::vector<sf::Vector2f> &patrolPath, const sf::Texture &tex);
 
 public:
     Level(const std::string &mapPath, TextureManager &textureManager, float tileSize, sf::RenderWindow &win);

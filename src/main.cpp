@@ -59,6 +59,7 @@ void handleLevelMenuInput(const sf::Event::KeyPressed &key, LevelMenu &levelmenu
             levelManager.loadInitialLevel("../assets/maps/level3.txt", textureManager);
             gameState = GameState::LEVEL_3;
             break;
+
         case 3:
             //     levelManager.loadInitialLevel("../assets/maps/level4.txt", textureManager);
             //     gameState = GameState::LEVEL_3;
@@ -121,6 +122,8 @@ int main()
     // Load Textures
     textureManager.load("wall-LR", "../assets/textures/Sprites/wall/Sprite-0002.png");
     textureManager.load("wall-TB", "../assets/textures/Sprites/wall/Sprite-0003.png");
+    textureManager.load("player-L", "../assets/textures/Sprites/player/player-1.png");
+    textureManager.load("guard", "../assets/textures/Sprites/guard/guard.png");
 
     while (window.isOpen())
     {
@@ -177,12 +180,15 @@ int main()
         case GameState::LEVEL_MENU:
             renderLevelMenu(window, levelmenu);
             break;
+        case GameState::LEVEL_CLEAR:
+            GameState::LEVEL_MENU;
+            break;
         case GameState::GAME_OVER:
         {
             window.draw(levelText);
             updateGameOverState(gameState, gameOverClock);
+            break;
         }
-        break;
         case GameState::EXIT:
             window.close();
             break;

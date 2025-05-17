@@ -1,10 +1,7 @@
 #include "player.hpp"
 
-Player::Player(float sp) : speed(sp), disguised(false), hidden(false)
+Player::Player(const sf::Texture &tex, float sp) : speed(sp), disguised(false), hidden(false), sprite(std::make_unique<sf::Sprite>(tex))
 {
-    rect.setSize(sf::Vector2f({10.f, 10.f}));
-    rect.setFillColor(sf::Color::Green);
-    rect.setPosition({400, 500});
 
     actionClocks["hack"];
     actionClocks["hide"];
@@ -15,22 +12,25 @@ Player::Player(float sp) : speed(sp), disguised(false), hidden(false)
     setActionCooldown("disguise", 8.f);
     setActionCooldown("hide", 10.f);
     setActionCooldown("distract", 2.f);
+
+    sprite->setOrigin({tex.getSize().x / 2.f, (float)tex.getSize().y});
+    sprite->setScale({32.f / tex.getSize().x, 32.f / tex.getSize().y});
 }
 
 bool Player::checkCollision(const sf::FloatRect &otherBounds) const
 {
-    return rect.getGlobalBounds().findIntersection(otherBounds).has_value();
+    return sprite->getGlobalBounds().findIntersection(otherBounds).has_value();
 }
+
 bool Player::canMove(sf::Vector2f offset, const std::vector<GameObject> &obstacles)
 {
-    rect.move(offset);
+    sprite->move(offset);
     for (const auto &obs : obstacles)
     {
+        // Use collisionBox for consistent detection
         if (checkCollision(obs.getCollisionBox()))
-
-        // if (checkCollision(obs.getBounds()))
         {
-            rect.move(-offset);
+            sprite->move(-offset);
             return false;
         }
     }
@@ -92,18 +92,10 @@ void Player::moveRight(float deltaTime, const std::vector<GameObject> &obstacles
 void Player::setDisguised(bool value)
 {
     disguised = value;
-    if (!value && !disguised)
-    {
-        rect.setFillColor(sf::Color::Green);
-    }
 }
 void Player::setHidden(bool value)
 {
     hidden = value;
-    if (!value && !hidden)
-    {
-        rect.setFillColor(sf::Color::Green);
-    }
 }
 
 bool Player::isDisguised() const { return disguised; }
@@ -118,7 +110,6 @@ void Player::disguise()
     }
 
     disguised = true;
-    rect.setFillColor(sf::Color::Cyan);
     std::cout << "[LOG] player is now disguised " << std::endl;
     actionClocks["disguise"].restart();
 }
@@ -131,7 +122,6 @@ void Player::hide()
         return;
     }
     hidden = true;
-    rect.setFillColor(sf::Color(128, 0, 255));
     std::cout << "[LOG] player is hidden " << std::endl;
     actionClocks["hide"].restart();
 }
@@ -147,7 +137,7 @@ void Player::hack()
 }
 void Player::distract() // throw distractions
 {
-    if (actionClocks["distract"].getElapsedTime().asSeconds() < actionCooldowns["distract"])
+    if (isOnCooldown("distract"))
     {
         std::cout << "[LOG] distract on cooldown\n";
         return;
@@ -169,23 +159,28 @@ void Player::cleanupDistractions()
         distractions.end());
 }
 
-void Player::update()
+void Player::update(GameState &gameState)
 {
     if (disguised && actionClocks["disguise"].getElapsedTime().asSeconds() > 10.f)
     {
         disguised = false;
-        rect.setFillColor(sf::Color::Green);
         std::cout << "[LOG] disguise ended\n";
     }
     if (hidden && actionClocks["hide"].getElapsedTime().asSeconds() > 10.f)
     {
         hidden = false;
-        rect.setFillColor(sf::Color::Green);
         std::cout << "[LOG] hiding ended\n";
+    }
+
+    if (won())
+    {
+        gameState = GameState::LEVEL_CLEAR;
+        std::cout << "[LOG] Level Won!\n";
     }
 
     cleanupDistractions();
 }
+
 void Player::setActionCooldown(std::string action, float dur)
 {
     actionCooldowns[action] = dur;
@@ -199,11 +194,11 @@ bool Player::isOnCooldown(std::string action) const
 }
 void Player::draw(sf::RenderWindow &window)
 {
-    window.draw(rect);
+    window.draw(*sprite);
 }
 void Player::setPos(sf::Vector2f &pos)
 {
-    rect.setPosition(pos);
+    sprite->setPosition(pos);
 }
 void Player::setGridPos(sf::Vector2i &pos)
 {
@@ -212,7 +207,7 @@ void Player::setGridPos(sf::Vector2i &pos)
 
 sf::Vector2f Player::getPos() const
 {
-    return rect.getPosition();
+    return sprite->getPosition();
 }
 sf::Vector2i Player::getGridPosition() const
 {
@@ -221,13 +216,13 @@ sf::Vector2i Player::getGridPosition() const
 
 sf::FloatRect Player::getBounds() const
 {
-    return rect.getGlobalBounds();
+    return sprite->getGlobalBounds();
 }
 
 void Player::drawTileHighlight(sf::RenderWindow &window, int tileWidth, int tileHeight)
 {
     // Get player position
-    sf::Vector2f pos = rect.getPosition();
+    sf::Vector2f pos = sprite->getPosition();
 
     // Convert isometric screen position to grid position
     int tileX = static_cast<int>((pos.x / (tileWidth / 2) + pos.y / (tileHeight / 2)) / 2);
@@ -247,4 +242,15 @@ void Player::drawTileHighlight(sf::RenderWindow &window, int tileWidth, int tile
 
     diamond.setFillColor(sf::Color(255, 255, 0, 100)); // Yellow with transparency
     window.draw(diamond);
+}
+
+bool Player::won()
+{
+    sf::Vector2f playerPos = getPos();
+
+    if (std::hypot(playerPos.x - goalPos.x, playerPos.y - goalPos.y) < 10.f)
+    {
+        return true;
+    }
+    return false;
 }

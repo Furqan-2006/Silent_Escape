@@ -21,6 +21,7 @@ struct GuardMetadata
 struct LevelMetadata
 {
     sf::Vector2f playerPos;
+    sf::Vector2i goalPos;
     sf::Vector2i playerGridPos;
     std::vector<GuardMetadata> guards;
 };
