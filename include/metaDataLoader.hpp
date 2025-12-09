@@ -13,9 +13,9 @@ struct GuardMetadata
     std::vector<sf::Vector2f> patrolPath;
 
     void addPoint(const sf::Vector2f &point)
-{
- patrolPath.push_back(point);
-}
+    {
+        patrolPath.push_back(point);
+    }
 };
 
 struct LevelMetadata

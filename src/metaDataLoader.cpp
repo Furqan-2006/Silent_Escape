@@ -8,7 +8,7 @@ using json = nlohmann::json; // Alias for nlohmann::json for convenience
 // Function to load level metadata from a JSON file
 LevelMetadata loadMetadata(const std::string &jsonPath, float tileSize)
 {
-    LevelMetadata metadata;       // Create a LevelMetadata object to store the parsed metadata
+    LevelMetadata metadata;       // Create a LevelMetadata struct to store the parsed metadata
     std::ifstream file(jsonPath); // Open the JSON file containing level metadata
 
     // Check if the file could be opened successfully
